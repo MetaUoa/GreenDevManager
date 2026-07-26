@@ -114,7 +114,10 @@ function Get-FrameworksComponents {
         [pscustomobject]@{
             Id = '7'; Key = 'python'; Name = 'Python / pip cache'
             SetupSelectable = $true
-            Vars = @{ PIP_CACHE_DIR = "$Root\Caches\pip" }
+            Vars = @{
+                PIP_CACHE_DIR = "$Root\Caches\pip"
+                PIP_INDEX_URL = 'https://pypi.tuna.tsinghua.edu.cn/simple'
+            }
             Paths = @(
                 "$Root\Runtimes\Python\current",
                 "$Root\Runtimes\Python\current\Scripts"

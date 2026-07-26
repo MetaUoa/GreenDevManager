@@ -1,0 +1,21 @@
+# Frameworks 绿色环境 Cargo 配置（国内镜像）
+# 权威副本: D:\Frameworks\Config\cargo\config.toml
+# 生效位置: %CARGO_HOME%\config.toml
+# 即: D:\Frameworks\Toolchains\Rust\cargo-home\config.toml
+
+[build]
+target-dir = "D:/Frameworks/Caches/Rust/target"
+
+[net]
+git-fetch-with-cli = true
+
+# crates.io 替换为字节跳动 rsproxy（含 sparse 索引，速度快）
+# 停用镜像：注释掉 [source.crates-io] 的 replace-with 一行即可
+[source.crates-io]
+replace-with = "rsproxy-sparse"
+
+[source.rsproxy-sparse]
+registry = "sparse+https://rsproxy.cn/index/"
+
+[registries.rsproxy]
+index = "sparse+https://rsproxy.cn/index/"

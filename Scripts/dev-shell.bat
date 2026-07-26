@@ -18,6 +18,7 @@ set "CARGO_TARGET_DIR=%FRAMEWORKS_HOME%\Caches\Rust\target"
 set "RUST_HOME=%FRAMEWORKS_HOME%\Toolchains\Rust\current"
 
 set "PIP_CACHE_DIR=%FRAMEWORKS_HOME%\Caches\pip"
+set "PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple"
 set "npm_config_cache=%FRAMEWORKS_HOME%\Caches\npm"
 set "MYSQL_HOME=%FRAMEWORKS_HOME%\Databases\Sql\mysql\current"
 
