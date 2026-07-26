@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+  <!--
+    Frameworks 绿色环境 Maven 配置（国内镜像）
+    权威副本: D:\Frameworks\Config\maven\settings.xml
+    生效位置: %MAVEN_HOME%\conf\settings.xml
+    本地仓库: D:\Frameworks\Caches\Maven\repository
+  -->
+
+  <localRepository>D:/Frameworks/Caches/Maven/repository</localRepository>
+  <interactiveMode>false</interactiveMode>
+  <offline>false</offline>
+
+  <pluginGroups>
+    <pluginGroup>org.apache.maven.plugins</pluginGroup>
+    <pluginGroup>org.codehaus.mojo</pluginGroup>
+  </pluginGroups>
+
+  <servers>
+    <!-- 公司私服账号（按需取消注释）
+    <server>
+      <id>nexus-releases</id>
+      <username>your-username</username>
+      <password>your-password</password>
+    </server>
+    -->
+  </servers>
+
+  <mirrors>
+    <!-- 阿里云 public：聚合 central + jcenter 等，个人开发首选 -->
+    <mirror>
+      <id>aliyun-public</id>
+      <name>Aliyun Maven Public</name>
+      <mirrorOf>*,!snapshots</mirrorOf>
+      <url>https://maven.aliyun.com/repository/public</url>
+    </mirror>
+    <mirror>
+      <id>aliyun-snapshots</id>
+      <name>Aliyun Maven Snapshots</name>
+      <mirrorOf>snapshots</mirrorOf>
+      <url>https://maven.aliyun.com/repository/snapshots</url>
+    </mirror>
+    <!-- 公司 Nexus 全量代理时启用，并注释上面两个 aliyun mirror
+    <mirror>
+      <id>corp-nexus-all</id>
+      <name>Corporate Nexus</name>
+      <mirrorOf>*</mirrorOf>
+      <url>http://nexus.company.com/repository/maven-public/</url>
+    </mirror>
+    -->
+    <mirror>
+      <id>maven-default-http-blocker</id>
+      <mirrorOf>external:http:*</mirrorOf>
+      <name>Block insecure HTTP repositories</name>
+      <url>http://0.0.0.0/</url>
+      <blocked>true</blocked>
+    </mirror>
+  </mirrors>
+
+  <profiles>
+    <profile>
+      <id>cn-dev</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.release>17</maven.compiler.release>
+        <downloadSources>true</downloadSources>
+        <downloadJavadocs>false</downloadJavadocs>
+      </properties>
+      <repositories>
+        <repository>
+          <id>central</id>
+          <name>Aliyun Central (logical)</name>
+          <url>https://maven.aliyun.com/repository/central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
+          <id>aliyun-public</id>
+          <name>Aliyun Public</name>
+          <url>https://maven.aliyun.com/repository/public</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
+          <id>aliyun-google</id>
+          <name>Aliyun Google</name>
+          <url>https://maven.aliyun.com/repository/google</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
+          <id>aliyun-spring</id>
+          <name>Aliyun Spring</name>
+          <url>https://maven.aliyun.com/repository/spring</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+        <repository>
+          <id>snapshots</id>
+          <name>Aliyun Snapshots</name>
+          <url>https://maven.aliyun.com/repository/snapshots</url>
+          <releases><enabled>false</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>central</id>
+          <name>Aliyun Central Plugins</name>
+          <url>https://maven.aliyun.com/repository/central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>aliyun-public</id>
+          <name>Aliyun Public Plugins</name>
+          <url>https://maven.aliyun.com/repository/public</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>aliyun-gradle-plugin</id>
+          <name>Aliyun Gradle Plugin (Maven coords)</name>
+          <url>https://maven.aliyun.com/repository/gradle-plugin</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <activeProfile>cn-dev</activeProfile>
+  </activeProfiles>
+
+  <!--
+  <proxies>
+    <proxy>
+      <id>local-proxy</id>
+      <active>true</active>
+      <protocol>http</protocol>
+      <host>127.0.0.1</host>
+      <port>7890</port>
+      <nonProxyHosts>localhost|127.0.0.1|*.local</nonProxyHosts>
+    </proxy>
+  </proxies>
+  -->
+</settings>

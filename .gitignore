@@ -1,0 +1,12 @@
+# 只跟踪脚本、文档、配置模板；工具本体、缓存、数据一律不进库
+/BuildTools/
+/Caches/
+/Databases/
+/Platforms/
+/ReverseTools/
+/Runtimes/
+/Toolchains/
+/downloads/
+
+# 环境变量备份（含本机路径快照，无需跟踪）
+/Config/env-backups/

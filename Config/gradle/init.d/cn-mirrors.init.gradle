@@ -1,0 +1,47 @@
+// Frameworks 绿色环境 Gradle 国内镜像
+// 权威副本: D:\Frameworks\Config\gradle\init.d\cn-mirrors.init.gradle
+// 生效位置: %GRADLE_USER_HOME%\init.d\cn-mirrors.init.gradle
+//
+// 为 pluginManagement / buildscript / project repositories 注入阿里云镜像，
+// 并保留 google / mavenCentral / gradlePluginPortal 作为回退。
+// 不修改 dependencyResolutionManagement，避免与 FAIL_ON_PROJECT_REPOS 项目冲突。
+
+def aliyunPublic = 'https://maven.aliyun.com/repository/public'
+def aliyunGoogle = 'https://maven.aliyun.com/repository/google'
+def aliyunGradlePlugin = 'https://maven.aliyun.com/repository/gradle-plugin'
+def aliyunSpring = 'https://maven.aliyun.com/repository/spring'
+def aliyunCentral = 'https://maven.aliyun.com/repository/central'
+
+settingsEvaluated { settings ->
+    settings.pluginManagement {
+        repositories {
+            maven { url aliyunGradlePlugin }
+            maven { url aliyunPublic }
+            maven { url aliyunGoogle }
+            gradlePluginPortal()
+            google()
+            mavenCentral()
+        }
+    }
+}
+
+allprojects {
+    buildscript {
+        repositories {
+            maven { url aliyunGradlePlugin }
+            maven { url aliyunPublic }
+            maven { url aliyunGoogle }
+            google()
+            mavenCentral()
+        }
+    }
+    repositories {
+        maven { url aliyunPublic }
+        maven { url aliyunGoogle }
+        maven { url aliyunGradlePlugin }
+        maven { url aliyunSpring }
+        maven { url aliyunCentral }
+        google()
+        mavenCentral()
+    }
+}
