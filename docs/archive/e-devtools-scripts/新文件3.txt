@@ -1,0 +1,111 @@
+fnm use v24.12.0
+pnpm -g list --depth 0
+pnpm uninstall -g snow-ai @iflow-ai/iflow-cli @google/gemini-cli @qwen-code/qwen-code @anthropic-ai/claude-code @openai/codex
+
+运行全局构建许可（推荐）
+pnpm approve-builds -g
+
+pnpm rebuild -g
+
+pnpm install -g snow-ai
+pnpm install -g @iflow-ai/iflow-cli@latest
+pnpm install -g @google/gemini-cli@latest
+pnpm install -g @qwen-code/qwen-code@latest
+pnpm install -g @anthropic-ai/claude-code@latest
+pnpm install -g @openai/codex@latest
+
+snow --version
+iflow --version
+gemini --version
+qwen --version
+claude --version
+codex --version
+
+
+
+
+function tools_update {
+    $env:HTTP_PROXY = http://127.0.0.1:7890
+    $env:HTTPS_PROXY = http://127.0.0.1:7890
+pnpm install -g snow-ai
+pnpm install -g @iflow-ai/iflow-cli@latest
+pnpm install -g @google/gemini-cli@latest
+pnpm install -g @qwen-code/qwen-code@latest
+pnpm install -g @anthropic-ai/claude-code@latest
+pnpm install -g @openai/codex@latest
+    (Get-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\claude" -Raw) ` -replace 'exec node  "C:/Users', 'exec node  "/mnt/c/Users' ` | Set-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\claude" -Encoding utf8
+    (Get-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\codex" -Raw) ` -replace 'exec node  "C:/Users', 'exec node  "/mnt/c/Users' ` | Set-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\codex" -Encoding utf8
+    (Get-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\gemini" -Raw) ` -replace 'exec node  "C:/Users', 'exec node  "/mnt/c/Users' ` | Set-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\gemini" -Encoding utf8
+    (Get-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\snow" -Raw) ` -replace 'exec node  "C:/Users', 'exec node  "/mnt/c/Users' ` | Set-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\snow" -Encoding utf8
+    (Get-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\qwen" -Raw) ` -replace 'exec node  "C:/Users', 'exec node  "/mnt/c/Users' ` | Set-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\qwen" -Encoding utf8
+    (Get-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\iflow" -Raw) ` -replace 'exec node  "C:/Users', 'exec node  "/mnt/c/Users' ` | Set-Content -Path "D:\Green\Scoop\persist\nodejs-lts\bin\iflow" -Encoding utf8
+}
+
+这条只是 **警告（WARN）**，不是错误：说明你安装的某个包依赖链里用到了一个**已弃用的子依赖** `node-domexception@1.0.0`。一般情况下：
+
+* ✅ 不影响安装/运行
+* ✅ 你也通常**没法直接修**（需要上游包更新依赖）
+* ⚠️ 只有在你遇到具体运行报错时才需要处理
+
+---
+
+## 你可以怎么做
+
+### 1) 找出是谁依赖了它（推荐）
+
+```powershell
+pnpm why node-domexception -g
+```
+
+会告诉你是哪个全局包/依赖把它带进来的。
+
+### 2) 尝试升级相关包（如果你想“尽量干净”）
+
+```powershell
+pnpm update -g
+```
+
+或针对某个包：
+
+```powershell
+pnpm update -g @google/gemini-cli
+```
+
+### 3) 忽略即可（大多数人这么做）
+
+只要 CLI 能正常运行，这类 “deprecated subdependencies” 很常见，等上游更新就会消失。
+
+---
+
+如果你把 `pnpm why node-domexception -g` 的输出贴出来，我可以告诉你具体是哪一个工具带来的、是否值得关注。
+
+
+这就说明两件事：
+
+1. 你的全局包已经是**最新**了（所以 `pnpm update -g` 才会说 *Already up to date*）。
+2. `node-domexception@1.0.0` 这个 **deprecated 子依赖** 仍然存在，是因为它来自某个上游依赖链——**只能等上游更新**，你本地更新不到更高版本。
+
+你现在可以做的最佳动作是：**定位是谁带来的**（这样你心里有数，也方便以后观察是否修掉）。
+
+## 1）找出来源（全局）
+
+```powershell
+pnpm why node-domexception -g
+```
+
+它会输出依赖链，比如 “A → B → node-domexception”。
+
+## 2）判断要不要在意
+
+一般可以忽略，除非：
+
+* 你在公司合规/安全扫描里需要“零 deprecated”
+* 或者运行时报错（很少）
+
+## 3）如果你想“临时压掉提示”
+
+pnpm 的这条提示目前更像通知，**不建议为了消掉它去强行锁依赖**（全局工具还可能被你其他包共享）。
+
+---
+
+把 `pnpm why node-domexception -g` 的输出贴我，我可以告诉你它大概率来自哪一类依赖（常见是 `undici` / fetch 相关链），以及是否有替代版本/替代工具可以避开。
