@@ -139,7 +139,8 @@
     <activeProfile>cn-dev</activeProfile>
   </activeProfiles>
 
-  <!--
+  <!-- 代理兜底：阿里云等国内镜像直连，google/central 等境外源走本机代理
+       代理停用时把 active 改为 false 即可 -->
   <proxies>
     <proxy>
       <id>local-proxy</id>
@@ -147,8 +148,7 @@
       <protocol>http</protocol>
       <host>127.0.0.1</host>
       <port>7890</port>
-      <nonProxyHosts>localhost|127.0.0.1|*.local</nonProxyHosts>
+      <nonProxyHosts>localhost|127.0.0.1|*.aliyun.com|*.aliyuncs.com|*.tencent.com|*.myqcloud.com|*.huaweicloud.com|*.163.com|*.ustc.edu.cn|*.tsinghua.edu.cn</nonProxyHosts>
     </proxy>
   </proxies>
-  -->
 </settings>

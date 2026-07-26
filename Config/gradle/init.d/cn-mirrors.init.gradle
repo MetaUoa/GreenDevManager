@@ -15,9 +15,9 @@ def aliyunCentral = 'https://maven.aliyun.com/repository/central'
 settingsEvaluated { settings ->
     settings.pluginManagement {
         repositories {
-            maven { url aliyunGradlePlugin }
-            maven { url aliyunPublic }
-            maven { url aliyunGoogle }
+            maven { url = uri(aliyunGradlePlugin) }
+            maven { url = uri(aliyunPublic) }
+            maven { url = uri(aliyunGoogle) }
             gradlePluginPortal()
             google()
             mavenCentral()
@@ -28,20 +28,21 @@ settingsEvaluated { settings ->
 allprojects {
     buildscript {
         repositories {
-            maven { url aliyunGradlePlugin }
-            maven { url aliyunPublic }
-            maven { url aliyunGoogle }
+            maven { url = uri(aliyunGradlePlugin) }
+            maven { url = uri(aliyunPublic) }
+            maven { url = uri(aliyunGoogle) }
             google()
             mavenCentral()
         }
     }
     repositories {
-        maven { url aliyunPublic }
-        maven { url aliyunGoogle }
-        maven { url aliyunGradlePlugin }
-        maven { url aliyunSpring }
-        maven { url aliyunCentral }
+        maven { url = uri(aliyunPublic) }
+        maven { url = uri(aliyunGoogle) }
+        maven { url = uri(aliyunGradlePlugin) }
+        maven { url = uri(aliyunSpring) }
+        maven { url = uri(aliyunCentral) }
         google()
         mavenCentral()
     }
 }
+
