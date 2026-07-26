@@ -67,15 +67,13 @@ Toolchains
 └─ Rust
    ├─ current          # junction -> standalone
    ├─ standalone       # rustc/cargo 实体
-   ├─ cargo-home
-   └─ rustup-home
+   └─ cargo-home
 ```
 
 入口:
 
 ```text
 RUST_HOME     Toolchains\Rust\current
-RUSTUP_HOME   Toolchains\Rust\rustup-home
 CARGO_HOME    Toolchains\Rust\cargo-home
 C/GCC         Toolchains\C\mingw64
 ACPI          Toolchains\ACPI\iasl
@@ -87,11 +85,6 @@ ACPI          Toolchains\ACPI\iasl
 BuildTools
 ├─ Gradle
 │  ├─ current          # -> gradle-8.14.5
-│  ├─ gradle-7.6.6
-│  ├─ gradle-8.5
-│  ├─ gradle-8.9
-│  ├─ gradle-8.11.1
-│  ├─ gradle-8.13
 │  ├─ gradle-8.14.5
 │  └─ gradle-9.4.1
 └─ Maven
@@ -109,10 +102,9 @@ Platforms
       ├─ build-tools
       ├─ cmake
       ├─ cmdline-tools
-      ├─ emulator
       ├─ platform-tools
       ├─ platforms
-      └─ sources
+      └─ sources          # 仅保留最近版本；emulator 已移除，需要时 sdkmanager 安装
 ```
 
 ```text
@@ -127,9 +119,11 @@ Databases
    └─ mysql
       ├─ current           # junction -> mysql-8.4.7
       ├─ mysql-8.4.7
-      ├─ resources
-      └─ my.ini
+      ├─ resources         # data / logs / files（2026-07 起数据实体在此，不再依赖 E 盘）
+      └─ my.ini            # basedir/datadir 均指向本目录
 ```
+
+启动: `mysqld --defaults-file=D:\Frameworks\Databases\Sql\mysql\my.ini`（未注册 Windows 服务）。
 
 ```text
 MYSQL_HOME   Databases\Sql\mysql\current
@@ -156,7 +150,6 @@ Caches
 ├─ Gradle              # GRADLE_USER_HOME（含 gradle.properties / init.d 生效副本）
 ├─ Maven\repository    # Maven 本地仓库
 ├─ npm
-├─ NuGet
 ├─ pip
 └─ Rust\target         # CARGO_TARGET_DIR
 ```
@@ -235,9 +228,9 @@ ANDROID_USER_HOME   Caches\Android
 CARGO_HOME          Toolchains\Rust\cargo-home
 CARGO_TARGET_DIR    Caches\Rust\target
 RUST_HOME           Toolchains\Rust\current
-RUSTUP_HOME         Toolchains\Rust\rustup-home
 MYSQL_HOME          Databases\Sql\mysql\current
 PIP_CACHE_DIR       Caches\pip
+PIP_INDEX_URL       https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 ## PATH 入口（按组件，存在才写入）

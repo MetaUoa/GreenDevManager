@@ -32,7 +32,6 @@ scripts:
 verify:
   - rustc --version
   - cargo --version
-  - rustup show
 ```
 
 ## 示例：Android 开发环境

@@ -49,7 +49,6 @@ function Assert-SafeDeletePath([string]$Path) {
         (Join-Path $root 'Platforms\Android\Sdk\build-tools'),
         (Join-Path $root 'Platforms\Android\Sdk\platforms'),
         (Join-Path $root 'Platforms\Android\Sdk\sources'),
-        (Join-Path $root 'Platforms\Android\Sdk\emulator'),
         (Join-Path $root 'Platforms\Android\Sdk\platform-tools'),
         (Join-Path $root 'Platforms\Android\Sdk\cmdline-tools'),
         (Join-Path $root 'Databases'),

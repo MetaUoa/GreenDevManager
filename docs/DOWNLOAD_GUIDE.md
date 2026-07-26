@@ -114,7 +114,6 @@ PATH:   ...\mingw64\bin
 ```text
 实体:   D:\Frameworks\Toolchains\Rust\standalone
 入口:   D:\Frameworks\Toolchains\Rust\current  -> standalone
-RUSTUP_HOME:  Toolchains\Rust\rustup-home
 CARGO_HOME:   Toolchains\Rust\cargo-home
 target 缓存:  Caches\Rust\target
 ```

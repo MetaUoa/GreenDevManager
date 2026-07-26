@@ -63,8 +63,7 @@ D:\Frameworks\
 │   ├── npm\
 │   ├── pip\
 │   ├── Rust\
-│   ├── Android\
-│   └── NuGet\
+│   └── Android\
 ├── Config\
 │   ├── cargo\
 │   ├── gradle\

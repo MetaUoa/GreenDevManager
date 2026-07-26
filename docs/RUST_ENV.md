@@ -1,22 +1,16 @@
 # Rust 绿色开发环境
 
-更新时间: 2026-07-13
+更新时间: 2026-07-26
 
 ## 目录结构（当前实装）
 
 ```text
 D:\Frameworks\Toolchains\Rust\
 ├── current\              # junction -> standalone
-├── standalone\           # rustc / cargo 实体安装
-├── rustup-home\
-│   ├── toolchains\
-│   ├── update-hashes\
-│   └── settings.toml
+├── standalone\           # rustc / cargo 实体安装（唯一工具链）
 └── cargo-home\
-    ├── bin\
     ├── registry\
-    ├── git\
-    └── config.toml
+    └── config.toml       # 生效副本；权威副本在 Config\cargo\config.toml
 ```
 
 构建产物缓存:
@@ -25,11 +19,8 @@ D:\Frameworks\Toolchains\Rust\
 D:\Frameworks\Caches\Rust\target      # CARGO_TARGET_DIR
 ```
 
-离线安装包:
-
-```text
-D:\Frameworks\downloads\rust
-```
+> rustup-home 已移除（2026-07）。当前只维护 standalone 单套工具链，
+> 升级方式见下文；如需改用 rustup 管理，需重新引入 RUSTUP_HOME。
 
 ## 环境变量
 
@@ -37,7 +28,6 @@ D:\Frameworks\downloads\rust
 
 ```bat
 set RUST_HOME=D:\Frameworks\Toolchains\Rust\current
-set RUSTUP_HOME=D:\Frameworks\Toolchains\Rust\rustup-home
 set CARGO_HOME=D:\Frameworks\Toolchains\Rust\cargo-home
 set CARGO_TARGET_DIR=D:\Frameworks\Caches\Rust\target
 set PATH=%RUST_HOME%\bin;%PATH%
@@ -46,30 +36,21 @@ set PATH=%RUST_HOME%\bin;%PATH%
 说明:
 
 - 日常使用走 `RUST_HOME`（`current` → `standalone`）。
-- 若使用 rustup 管理工具链，保留 `RUSTUP_HOME`。
 - 依赖/registry 在 `CARGO_HOME`；编译 target 在 `Caches\Rust\target`。
+- 共享 target 目录的取舍：省磁盘，但不同项目 feature/依赖差异会触发重编译。
 
-## 安装流程（参考）
+## 升级流程（standalone 方式）
 
-```bat
-set RUSTUP_HOME=D:\Frameworks\Toolchains\Rust\rustup-home
-set CARGO_HOME=D:\Frameworks\Toolchains\Rust\cargo-home
-D:\Frameworks\downloads\rust\rustup-init.exe -y --no-modify-path
-rustup default stable
-rustup component add rustfmt clippy rust-src
-```
-
-或解压 standalone 发行版到 `Toolchains\Rust\standalone`，并保证:
-
-```text
-Toolchains\Rust\current  ->  standalone
-```
+1. 下载新版 standalone 发行包（`rust-x.xx.x-x86_64-pc-windows-gnu.tar.xz`）。
+2. 解压为 `Toolchains\Rust\rust-x.xx`（或直接替换 `standalone`）。
+3. 重建 junction: `mklink /J current <新目录>`（管理员或开发者模式）。
+4. `rustc --version` 验证。
 
 ## Cargo 配置
 
-文件: `Toolchains\Rust\cargo-home\config.toml`
+权威副本: `Config\cargo\config.toml`，生效位置: `cargo-home\config.toml`。
 
-建议:
+当前内容（已配 rsproxy 国内镜像）:
 
 ```toml
 [build]
@@ -77,9 +58,15 @@ target-dir = "D:/Frameworks/Caches/Rust/target"
 
 [net]
 git-fetch-with-cli = true
+
+[source.crates-io]
+replace-with = "rsproxy-sparse"
+
+[source.rsproxy-sparse]
+registry = "sparse+https://rsproxy.cn/index/"
 ```
 
-国内 crates 镜像可按需自行添加 `[source.crates-io]` / `replace-with`。
+停用镜像：注释掉 `replace-with` 一行。
 
 ## 检测
 
@@ -87,7 +74,6 @@ git-fetch-with-cli = true
 call D:\Frameworks\Scripts\dev-shell.bat
 rustc --version
 cargo --version
-rustup show
 ```
 
 ## 清理
@@ -98,4 +84,4 @@ Rust 构建缓存可用:
 D:\Frameworks\cleanup.bat apply safe
 ```
 
-会清理 `Caches\Rust\target`，不会删除 `standalone` / `rustup-home` / `cargo-home` 工具本身。
+会清理 `Caches\Rust\target`，不会删除 `standalone` / `cargo-home` 工具本身。
