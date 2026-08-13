@@ -11,7 +11,7 @@ for %%I in ("%~dp0" "%~dp0.." "%~dp0..\.." "%~dp0..\..\.." "%~dp0..\..\..\..") d
 )
 if not defined FRAMEWORKS_HOME (
   echo Frameworks root was not found.
-  echo Usage: run.bat D:\Frameworks
+  echo Usage: run.bat DRIVE:\YourDevEnvironment
   exit /b 2
 )
 :launch

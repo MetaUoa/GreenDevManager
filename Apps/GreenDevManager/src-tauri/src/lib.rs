@@ -619,10 +619,32 @@ fn compare_versions(left: &str, right: &str) -> std::cmp::Ordering {
     }
 }
 
+const BOOTSTRAP_MANIFEST_URL: &str =
+    "https://github.com/MetaUoa/GreenDevManager/releases/latest/download/bootstrap-manifest.json";
+
+fn bootstrap_config_path() -> PathBuf {
+    env::var_os("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(env::temp_dir)
+        .join("GreenDevManager")
+        .join("root.json")
+}
+
+fn saved_frameworks_root() -> Option<PathBuf> {
+    let value: Value = serde_json::from_str(&fs::read_to_string(bootstrap_config_path()).ok()?).ok()?;
+    let path = PathBuf::from(value.get("root")?.as_str()?);
+    is_frameworks_root(&path).then_some(path)
+}
+
 fn frameworks_root() -> Result<PathBuf, String> {
     if let Ok(value) = env::var("FRAMEWORKS_HOME") {
         let path = PathBuf::from(value);
         if is_frameworks_root(&path) {
+            return path.canonicalize().map_err(|error| error.to_string());
+        }
+    }
+    if env::var_os("GREENDEV_DISABLE_SAVED_ROOT").is_none() {
+        if let Some(path) = saved_frameworks_root() {
             return path.canonicalize().map_err(|error| error.to_string());
         }
     }
@@ -647,6 +669,241 @@ fn frameworks_root() -> Result<PathBuf, String> {
 
 fn is_frameworks_root(path: &Path) -> bool {
     path.join("Scripts").is_dir() && path.join("env-setup.bat").is_file()
+}
+
+fn persist_frameworks_root(path: &Path) -> Result<(), String> {
+    let canonical = path.canonicalize().map_err(|error| error.to_string())?;
+    let config_path = bootstrap_config_path();
+    let parent = config_path
+        .parent()
+        .ok_or_else(|| "根目录配置路径无效。".to_string())?;
+    fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    let temporary = parent.join(format!("root-{}.tmp", now_millis()));
+    let content = serde_json::to_vec_pretty(&json!({
+            "schemaVersion": 1,
+            "root": display_path(&canonical),
+            "savedAt": now_millis()
+        }))
+        .map_err(|error| error.to_string())?;
+    if config_path.is_file() {
+        atomic_config_write(
+            &config_path,
+            &String::from_utf8(content).map_err(|error| error.to_string())?,
+        )?;
+    } else {
+        fs::write(&temporary, content).map_err(|error| error.to_string())?;
+        fs::rename(&temporary, &config_path).map_err(|error| error.to_string())?;
+    }
+    env::set_var("FRAMEWORKS_HOME", &canonical);
+    let _ = background_command(system_program("reg.exe"))
+        .args([
+            "add",
+            r"HKCU\Environment",
+            "/v",
+            "FRAMEWORKS_HOME",
+            "/t",
+            "REG_SZ",
+            "/d",
+            &display_path(&canonical),
+            "/f",
+        ])
+        .output();
+    Ok(())
+}
+
+fn copy_bootstrap_tree(source: &Path, destination: &Path) -> Result<(), String> {
+    fs::create_dir_all(destination).map_err(|error| error.to_string())?;
+    for entry in fs::read_dir(source).map_err(|error| error.to_string())? {
+        let entry = entry.map_err(|error| error.to_string())?;
+        let file_type = entry.file_type().map_err(|error| error.to_string())?;
+        if file_type.is_symlink() {
+            return Err(format!("初始化包包含符号链接：{}", entry.path().display()));
+        }
+        let target = destination.join(entry.file_name());
+        if file_type.is_dir() {
+            copy_bootstrap_tree(&entry.path(), &target)?;
+        } else if file_type.is_file() {
+            fs::copy(entry.path(), target).map_err(|error| error.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+fn download_file(url: &str, destination: &Path) -> Result<(), String> {
+    if !url.starts_with("https://") {
+        return Err("初始化下载地址必须使用 HTTPS。".into());
+    }
+    if let Some(parent) = destination.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let output = background_command(system_program("curl.exe"))
+        .args([
+            "--fail",
+            "--location",
+            "--retry",
+            "3",
+            "--connect-timeout",
+            "15",
+            "--output",
+            &display_path(destination),
+            url,
+        ])
+        .output()
+        .map_err(|error| format!("启动下载失败：{error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "下载失败：{}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    Ok(())
+}
+
+fn safe_bootstrap_entry(value: &str) -> bool {
+    let entry = Path::new(value.trim());
+    !entry.as_os_str().is_empty()
+        && !entry.components().any(|part| {
+            matches!(
+                part,
+                Component::ParentDir | Component::RootDir | Component::Prefix(_)
+            )
+        })
+}
+
+fn validate_bootstrap_archive(path: &Path) -> Result<(), String> {
+    let output = background_command(system_program("tar.exe"))
+        .args(["-t", "-f", &display_path(path)])
+        .output()
+        .map_err(|error| format!("读取初始化包目录失败：{error}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    for line in String::from_utf8_lossy(&output.stdout).lines() {
+        if !safe_bootstrap_entry(line) {
+            return Err(format!("初始化包包含越界路径：{line}"));
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn get_bootstrap_status() -> Value {
+    match frameworks_root() {
+        Ok(root) => json!({
+            "configured": true,
+            "root": display_path(&root),
+            "currentVersion": env!("CARGO_PKG_VERSION"),
+            "manifestUrl": BOOTSTRAP_MANIFEST_URL
+        }),
+        Err(_) => json!({
+            "configured": false,
+            "root": "",
+            "currentVersion": env!("CARGO_PKG_VERSION"),
+            "manifestUrl": BOOTSTRAP_MANIFEST_URL
+        }),
+    }
+}
+
+#[tauri::command]
+fn select_frameworks_directory() -> Result<Option<String>, String> {
+    #[cfg(windows)]
+    {
+        let script = r#"Add-Type -AssemblyName System.Windows.Forms; $dialog = New-Object System.Windows.Forms.FolderBrowserDialog; $dialog.Description = 'Select or create a GreenDev environment directory'; $dialog.ShowNewFolderButton = $true; if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Write($dialog.SelectedPath) }"#;
+        let output = background_command(system_program("powershell.exe"))
+            .args(["-NoProfile", "-STA", "-Command", script])
+            .output()
+            .map_err(|error| format!("打开目录选择器失败：{error}"))?;
+        if !output.status.success() {
+            return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+        }
+        let selected = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        Ok((!selected.is_empty()).then_some(selected))
+    }
+    #[cfg(not(windows))]
+    Ok(None)
+}
+
+#[tauri::command]
+fn initialize_frameworks_root(
+    path: String,
+    mode: String,
+    state: tauri::State<AppState>,
+) -> Result<Value, String> {
+    let selected = PathBuf::from(path.trim());
+    if !selected.is_absolute() {
+        return Err("请选择绝对目录。".into());
+    }
+    match mode.as_str() {
+        "existing" => {
+            if !is_frameworks_root(&selected) {
+                return Err("所选目录不是现有 GreenDev 环境：缺少 Scripts 和 env-setup.bat。".into());
+            }
+        }
+        "fresh" => {
+            fs::create_dir_all(&selected).map_err(|error| format!("创建目录失败：{error}"))?;
+            if fs::read_dir(&selected)
+                .map_err(|error| error.to_string())?
+                .next()
+                .is_some()
+            {
+                return Err("全新初始化需要选择空目录，以保护已有文件。".into());
+            }
+            let cache = bootstrap_config_path()
+                .parent()
+                .ok_or_else(|| "初始化缓存路径无效。".to_string())?
+                .join("bootstrap");
+            fs::create_dir_all(&cache).map_err(|error| error.to_string())?;
+            let manifest_url = env::var("GREENDEV_BOOTSTRAP_MANIFEST_URL")
+                .unwrap_or_else(|_| BOOTSTRAP_MANIFEST_URL.into());
+            let manifest_path = cache.join("bootstrap-manifest.json");
+            download_file(&manifest_url, &manifest_path)?;
+            let manifest: Value = serde_json::from_str(
+                &fs::read_to_string(&manifest_path).map_err(|error| error.to_string())?,
+            )
+            .map_err(|error| format!("初始化清单格式错误：{error}"))?;
+            let version = manifest["version"]
+                .as_str()
+                .ok_or_else(|| "初始化清单缺少 version。".to_string())?;
+            let url = manifest["url"]
+                .as_str()
+                .ok_or_else(|| "初始化清单缺少 url。".to_string())?;
+            let expected = manifest["sha256"]
+                .as_str()
+                .ok_or_else(|| "初始化清单缺少 sha256。".to_string())?
+                .to_uppercase();
+            let archive = cache.join(format!("GreenDevManager-bootstrap-{version}.zip"));
+            download_file(url, &archive)?;
+            let actual = sha256_file(&archive)?;
+            if actual != expected {
+                return Err(format!("初始化包 SHA-256 校验失败：{actual}"));
+            }
+            validate_bootstrap_archive(&archive)?;
+            let stage = cache.join(format!("stage-{version}"));
+            if stage.is_dir() {
+                fs::remove_dir_all(&stage).map_err(|error| error.to_string())?;
+            }
+            extract_archive(&archive, &stage)?;
+            if !is_frameworks_root(&stage) {
+                return Err("初始化包结构不完整。".into());
+            }
+            copy_bootstrap_tree(&stage, &selected)?;
+            if !is_frameworks_root(&selected) {
+                return Err("初始化后的目录校验失败。".into());
+            }
+        }
+        _ => return Err("初始化模式无效。".into()),
+    }
+    persist_frameworks_root(&selected)?;
+    let root = frameworks_root()?;
+    let _ = restore_persisted_tasks(&state, &root);
+    recover_transactions(&root);
+    Ok(json!({
+        "configured": true,
+        "root": display_path(&root),
+        "currentVersion": env!("CARGO_PKG_VERSION"),
+        "manifestUrl": BOOTSTRAP_MANIFEST_URL,
+        "mode": mode
+    }))
 }
 
 fn system_program(name: &str) -> PathBuf {
@@ -4195,12 +4452,18 @@ fn get_diagnostics() -> Result<DiagnosticReport, String> {
         r"Config\greendev\components.json",
         true,
     );
-    push_path(
-        "webview-loader",
-        "WebView2 Loader",
-        r"Apps\GreenDevManager\WebView2Loader.dll",
-        true,
-    );
+    let loader = env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(|parent| parent.join("WebView2Loader.dll")));
+    items.push(DiagnosticItem {
+        id: "webview-loader".into(),
+        name: "WebView2 Loader".into(),
+        healthy: loader.as_ref().is_some_and(|path| path.is_file()),
+        detail: loader
+            .as_deref()
+            .map(display_path)
+            .unwrap_or_else(|| "当前程序目录不可用".into()),
+    });
     let write_probe = root.join(r"Caches\GreenDevManager\.write-probe");
     let write_result = fs::create_dir_all(write_probe.parent().unwrap())
         .and_then(|_| fs::write(&write_probe, b"ok"))
@@ -4753,7 +5016,9 @@ pub fn run() {
     if let Ok(root) = frameworks_root() {
         let _ = restore_persisted_tasks(&state, &root);
         recover_transactions(&root);
-        std::panic::set_hook(Box::new(move |info| {
+    }
+    std::panic::set_hook(Box::new(move |info| {
+        if let Ok(root) = frameworks_root() {
             let directory = root.join(r"Logs\GreenDev");
             let _ = fs::create_dir_all(&directory);
             use std::io::Write;
@@ -4764,11 +5029,14 @@ pub fn run() {
             {
                 let _ = writeln!(file, "{} | {}", now_millis(), info);
             }
-        }));
-    }
+        }
+    }));
     tauri::Builder::default()
         .manage(state)
         .invoke_handler(tauri::generate_handler![
+            get_bootstrap_status,
+            select_frameworks_directory,
+            initialize_frameworks_root,
             get_dashboard,
             scan_storage,
             run_doctor,
@@ -5142,5 +5410,34 @@ mod tests {
         assert_eq!(value["bytesProcessed"], 1024);
         assert_eq!(value["etaSeconds"], 6);
         assert_eq!(value["attempt"], 2);
+    }
+    #[test]
+    fn bootstrap_root_accepts_any_directory_name() {
+        let root = env::temp_dir().join(format!("custom-dev-root-{}", now_millis()));
+        fs::create_dir_all(root.join("Scripts")).unwrap();
+        fs::write(root.join("env-setup.bat"), "@echo off\r\n").unwrap();
+        assert!(is_frameworks_root(&root));
+        let _ = fs::remove_dir_all(root);
+    }
+    #[test]
+    fn bootstrap_archive_entries_stay_relative() {
+        assert!(safe_bootstrap_entry("Scripts/frameworks-common.ps1"));
+        assert!(safe_bootstrap_entry("Config/greendev/components.json"));
+        assert!(!safe_bootstrap_entry("../outside.txt"));
+        assert!(!safe_bootstrap_entry(r"C:\outside.txt"));
+        assert!(!safe_bootstrap_entry(r"\outside.txt"));
+    }
+    #[test]
+    fn bootstrap_copy_preserves_tree() {
+        let base = env::temp_dir().join(format!("greendev-bootstrap-copy-{}", now_millis()));
+        let source = base.join("source");
+        let destination = base.join("destination");
+        fs::create_dir_all(source.join(r"Config\greendev")).unwrap();
+        fs::write(source.join("env-setup.bat"), "@echo off\r\n").unwrap();
+        fs::write(source.join(r"Config\greendev\components.json"), "{}").unwrap();
+        copy_bootstrap_tree(&source, &destination).unwrap();
+        assert!(destination.join("env-setup.bat").is_file());
+        assert!(destination.join(r"Config\greendev\components.json").is_file());
+        let _ = fs::remove_dir_all(base);
     }
 }

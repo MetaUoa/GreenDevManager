@@ -25,7 +25,8 @@ function Invoke-Node($Node, $Plan, [string]$NodeAction) {
             if ($LASTEXITCODE -ne 0) { throw "Local agent failed: $($Node.id)" }
         }
         'winrm' {
-            $remoteRoot = if ($Node.root) { [string]$Node.root } else { 'D:\Frameworks' }
+            $remoteRoot = [string]$Node.root
+            if (-not $remoteRoot) { throw "WinRM node '$($Node.id)' must define its Frameworks root." }
             $planJson = $Plan | ConvertTo-Json -Depth 20 -Compress
             Invoke-Command -ComputerName ([string]$Node.host) -ScriptBlock {
                 param($FrameworksRoot, $RemoteAction, $PlanJson, $RolloutId)

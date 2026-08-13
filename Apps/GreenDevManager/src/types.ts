@@ -32,6 +32,14 @@ export type Dashboard = {
 
 export type StorageMetrics = Pick<Dashboard, "totalSizeBytes" | "cacheSizeBytes" | "caches">;
 
+export type BootstrapStatus = {
+  configured: boolean;
+  root: string;
+  currentVersion: string;
+  manifestUrl: string;
+  mode?: "existing" | "fresh";
+};
+
 export type OperationResult = {
   operationId: string;
   success: boolean;

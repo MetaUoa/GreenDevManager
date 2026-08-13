@@ -12,7 +12,9 @@ if (-not [string]::Equals($pendingFull, $expectedPending, [StringComparison]::Or
 $pending = Get-Content -LiteralPath $pendingFull -Raw | ConvertFrom-Json
 $stage = [System.IO.Path]::GetFullPath([string]$pending.stage)
 $stageRoot = [System.IO.Path]::GetFullPath((Join-Path $root 'Caches\GreenDevManager\app-update-stage')).TrimEnd('\') + '\'
-$appRoot = [System.IO.Path]::GetFullPath((Join-Path $root 'Apps\GreenDevManager'))
+$currentExecutable = [System.IO.Path]::GetFullPath([string]$pending.currentExecutable)
+if ([System.IO.Path]::GetFileName($currentExecutable) -ne 'GreenDevManager.exe') { throw 'Current executable name is invalid.' }
+$appRoot = Split-Path -Parent $currentExecutable
 if (-not $stage.StartsWith($stageRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Update stage is outside the managed cache.' }
 if (-not (Test-Path -LiteralPath (Join-Path $stage 'GreenDevManager.exe') -PathType Leaf)) { throw 'Staged executable is missing.' }
 
@@ -38,13 +40,13 @@ try {
         Copy-Item -LiteralPath $source -Destination $temporary -Force
         Move-Item -LiteralPath $temporary -Destination $file.Target -Force
     }
-    $process = Start-Process -FilePath (Join-Path $appRoot 'GreenDevManager.exe') -PassThru
+    $process = Start-Process -FilePath $currentExecutable -PassThru
     Start-Sleep -Seconds 5
     if ($process.HasExited) { throw "Updated application exited during health window: $($process.ExitCode)" }
     Move-Item -LiteralPath $pendingFull -Destination "$pendingFull.applied-$stamp.json" -Force
 } catch {
     foreach ($file in $managedFiles) { $saved = Join-Path $backup $file.Name; if (Test-Path -LiteralPath $saved) { Copy-Item -LiteralPath $saved -Destination $file.Target -Force } }
     Move-Item -LiteralPath $pendingFull -Destination "$pendingFull.failed-$stamp.json" -Force
-    Start-Process -FilePath (Join-Path $appRoot 'GreenDevManager.exe') | Out-Null
+    Start-Process -FilePath $currentExecutable | Out-Null
     throw
 }

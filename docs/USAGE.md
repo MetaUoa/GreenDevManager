@@ -353,6 +353,15 @@ D:\Frameworks\docs\DIRECTORY_STRUCTURE.md
 D:\Frameworks\docs\DOWNLOAD_GUIDE.md
 D:\Frameworks\docs\RUST_ENV.md
 ```
+# 首次启动与任意盘符
+
+安装版或独立便携版未发现环境根目录时，会显示首次启动向导：
+
+- “全新下载配置”：选择空目录，应用从 GitHub Latest Release 下载 `bootstrap-manifest.json` 与对应 ZIP，核对 SHA-256 后写入基础配置、脚本和 CLI。
+- “接入现有环境”：选择包含 `Scripts`、`Config` 和 `env-setup.bat` 的目录。
+
+成功后根目录保存到应用本地配置和用户级 `FRAMEWORKS_HOME`。目录可以位于任意盘符，也不要求名称为 `Frameworks`。全新初始化只接受空目录，不覆盖所选目录中的既有文件。
+
 # 应用更新源
 
 GreenDev Manager 的“应用更新”页面有两种来源：

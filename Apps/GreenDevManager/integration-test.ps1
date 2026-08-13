@@ -19,7 +19,7 @@ foreach ($name in $scripts) {
     if ($errors.Count) { throw "$name syntax: $($errors[0].Message)" }
     Write-Host "[OK] $name"
 }
-foreach ($name in @('build.ps1', 'release.ps1', 'e2e-test.ps1', 'reliability-test.ps1', 'phase17-test.ps1', 'phase20-test.ps1')) {
+foreach ($name in @('build.ps1', 'release.ps1', 'e2e-test.ps1', 'reliability-test.ps1', 'phase17-test.ps1', 'phase20-test.ps1', 'bootstrap-test.ps1')) {
     $path = Join-Path $appRoot $name
     $tokens = $null; $errors = $null
     [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null

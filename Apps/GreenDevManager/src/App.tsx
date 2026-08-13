@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Activity, ArchiveRestore, Boxes, Check, ChevronRight, CircleAlert, Database,
-  Code2, Download, FileArchive, FileClock, FolderCog, Gauge, HardDrive, Layers3, ListTodo, LoaderCircle, Moon,
+  Code2, Download, FileArchive, FileClock, FolderCog, FolderOpen, Gauge, HardDrive, Layers3, ListTodo, LoaderCircle, Moon,
   MonitorCog, PackageCheck, Pin, PinOff, Play, RefreshCw, RotateCcw, Save, Search, Settings2,
   ShieldCheck, Smartphone, Sparkles, Square, Sun, TerminalSquare, Trash2, Upload, Wrench, X
 } from "lucide-react";
 import type {
   AndroidPackage, BackupPreview, BatchInstallPlan, CacheEntry, ComponentStatus, ConfigDocument, ConfigPreview, ConfigStatus, Dashboard,
   DiagnosticReport, EnvironmentBackup, InstallPlan, InstallSettings, MaintenanceStatus, ManifestComponent, OperationResult,
-  AppUpdateStatus, EcosystemStatus, EnterpriseStatus, FleetStatus, ManifestEditor, ProfileDiff, ProfileSets, RecoveryCenter, ReliabilityStatus, StorageMetrics, StoragePoint, SupplyChainStatus, TaskPolicy, TaskSnapshot, UpdateCandidate, VersionInventory
+  AppUpdateStatus, BootstrapStatus, EcosystemStatus, EnterpriseStatus, FleetStatus, ManifestEditor, ProfileDiff, ProfileSets, RecoveryCenter, ReliabilityStatus, StorageMetrics, StoragePoint, SupplyChainStatus, TaskPolicy, TaskSnapshot, UpdateCandidate, VersionInventory
 } from "./types";
 
 type View = "overview" | "components" | "android" | "manifest" | "catalog" | "updater" | "profiles" | "recovery" | "stability" | "supply" | "fleet" | "developer" | "enterprise" | "environment" | "cache" | "config" | "diagnostics" | "logs";
@@ -119,7 +119,7 @@ function App() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [manifestEditor, setManifestEditor] = useState<ManifestEditor | null>(isDesktop ? null : { raw: JSON.stringify({ schemaVersion: 2, components: [] }, null, 2), baseHash: "preview", errors: [], path: "Config\\greendev\\components.json" });
   const [trustPolicy, setTrustPolicy] = useState<Record<string, unknown>>({});
-  const [appUpdate, setAppUpdate] = useState<AppUpdateStatus | null>(isDesktop ? null : { currentVersion: "1.0.0", latestLocalVersion: "1.0.0", latestRemoteVersion: "", targetVersion: "1.0.0", updateAvailable: false, prepared: false, localVersions: ["1.0.0"], settings: { schemaVersion: 1, channel: "stable", feedUrl: "https://github.com/MetaUoa/GreenDevManager/releases/latest/download/update-feed.json", requireSignature: false, autoDownload: false }, feed: {} });
+  const [appUpdate, setAppUpdate] = useState<AppUpdateStatus | null>(isDesktop ? null : { currentVersion: "1.0.1", latestLocalVersion: "1.0.1", latestRemoteVersion: "", targetVersion: "1.0.1", updateAvailable: false, prepared: false, localVersions: ["1.0.1"], settings: { schemaVersion: 1, channel: "stable", feedUrl: "https://github.com/MetaUoa/GreenDevManager/releases/latest/download/update-feed.json", requireSignature: false, autoDownload: false }, feed: {} });
   const [profileSets, setProfileSets] = useState<ProfileSets | null>(isDesktop ? null : { schemaVersion: 1, activeProfile: "default", profiles: [{ id: "default", name: "默认开发环境", components: [], teamTemplate: false, machineOverrides: {} }] });
   const [profileDiff, setProfileDiff] = useState<ProfileDiff | null>(null);
   const [taskPolicy, setTaskPolicy] = useState<TaskPolicy>({ maxConcurrent: 2, defaultPriority: 50, notifications: true });
@@ -129,6 +129,9 @@ function App() {
   const [supplyChain, setSupplyChain] = useState<SupplyChainStatus | null>(null);
   const [fleet, setFleet] = useState<FleetStatus | null>(null);
   const [ecosystem, setEcosystem] = useState<EcosystemStatus | null>(null);
+  const [bootstrap, setBootstrap] = useState<BootstrapStatus | null>(isDesktop ? null : { configured: true, root: mockDashboard.root, currentVersion: "1.0.1", manifestUrl: "" });
+  const [bootstrapBusy, setBootstrapBusy] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState("");
 
   async function loadDashboard() {
     setBusy("refresh");
@@ -176,8 +179,14 @@ function App() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    void loadDashboard();
-    void loadSupportingData().catch(error => setResult(fallbackResult("读取管理数据失败", String(error), false)));
+    if (!isDesktop) { void loadDashboard(); return; }
+    void invoke<BootstrapStatus>("get_bootstrap_status").then(status => {
+      setBootstrap(status);
+      if (status.configured) {
+        void loadDashboard();
+        void loadSupportingData().catch(error => setResult(fallbackResult("读取管理数据失败", String(error), false)));
+      }
+    }).catch(error => { setBootstrap({ configured: false, root: "", currentVersion: "", manifestUrl: "" }); setBootstrapError(String(error)); });
   }, []);
 
   useEffect(() => { localStorage.setItem("greendev-view", view); window.scrollTo(0, 0); }, [view]);
@@ -273,6 +282,23 @@ function App() {
     finally { setBusy(null); }
   }
 
+  async function browseBootstrapDirectory() {
+    setBootstrapError("");
+    try { return isDesktop ? await invoke<string | null>("select_frameworks_directory") : null; }
+    catch (error) { setBootstrapError(String(error)); return null; }
+  }
+
+  async function initializeBootstrap(path: string, mode: "existing" | "fresh") {
+    setBootstrapBusy(true); setBootstrapError("");
+    try {
+      const status = await invoke<BootstrapStatus>("initialize_frameworks_root", { path, mode });
+      setBootstrap(status);
+      await Promise.all([loadDashboard(), loadSupportingData()]);
+      setView(mode === "fresh" ? "manifest" : "overview");
+    } catch (error) { setBootstrapError(String(error)); }
+    finally { setBootstrapBusy(false); }
+  }
+
   const healthPercent = dashboard ? Math.round(dashboard.healthyCount / Math.max(1, dashboard.components.length) * 100) : 0;
   const groupedComponents = useMemo(() => {
     const groups = new Map<string, ComponentStatus[]>();
@@ -287,6 +313,9 @@ function App() {
     const configItems = configs.map(item => ({ key: `config-${item.id}`, label: item.name, detail: item.sourcePath, view: "config" as View }));
     return [...pages, ...components, ...configItems].filter(item => `${item.label} ${item.detail}`.toLowerCase().includes(query)).slice(0, 8);
   }, [globalQuery, dashboard, configs]);
+
+  if (!bootstrap) return <BootstrapLoading />;
+  if (!bootstrap.configured) return <BootstrapWizard busy={bootstrapBusy} error={bootstrapError} onBrowse={browseBootstrapDirectory} onInitialize={initializeBootstrap} />;
 
   return <><a className="skip-link" href="#main-content">跳到主要内容</a><div className="app-shell">
     <aside className="sidebar">
@@ -329,6 +358,17 @@ function App() {
     {profileImportOpen && <ProfileImportDialog onClose={() => setProfileImportOpen(false)} onImport={path => { setProfileImportOpen(false); void runOperation("profile-import", "import_portable_profile", { sourcePath: path }, true); }} />}
     {result && <ResultDialog result={result} onClose={() => setResult(null)} />}
   </div><div className="sr-only" role="status" aria-live="polite">{busy ? "操作进行中" : "就绪"}</div></>;
+}
+
+function BootstrapLoading() {
+  return <main className="bootstrap-shell"><section className="bootstrap-card compact"><div className="brand-mark"><Layers3 size={24} /></div><LoaderCircle className="spin" size={24} /><h1>正在发现开发环境</h1><p>检查已保存目录、环境变量和程序所在目录。</p></section></main>;
+}
+
+function BootstrapWizard({ busy, error, onBrowse, onInitialize }: { busy: boolean; error: string; onBrowse: () => Promise<string | null>; onInitialize: (path: string, mode: "existing" | "fresh") => Promise<void> }) {
+  const [path, setPath] = useState("");
+  const [mode, setMode] = useState<"existing" | "fresh">("fresh");
+  async function browse() { const value = await onBrowse(); if (value) setPath(value); }
+  return <main className="bootstrap-shell"><section className="bootstrap-card"><div className="bootstrap-brand"><div className="brand-mark"><Layers3 size={23} /></div><div><strong>GreenDev Manager</strong><span>FIRST RUN SETUP</span></div></div><div className="bootstrap-copy"><span className="section-kicker"><Sparkles size={14} />首次启动</span><h1>选择你的开发环境目录</h1><p>根目录不限定盘符和名称。你可以接入已有环境，或选择空目录并从正式发布源下载一套全新的配置、脚本和 CLI。</p></div><div className="bootstrap-modes"><button className={mode === "fresh" ? "bootstrap-mode selected" : "bootstrap-mode"} onClick={() => setMode("fresh")}><Download size={21} /><span><strong>全新下载配置</strong><small>要求空目录；下载初始化包并校验 SHA-256</small></span>{mode === "fresh" && <Check size={17} />}</button><button className={mode === "existing" ? "bootstrap-mode selected" : "bootstrap-mode"} onClick={() => setMode("existing")}><ArchiveRestore size={21} /><span><strong>接入现有环境</strong><small>验证 Scripts、Config 和 env-setup.bat</small></span>{mode === "existing" && <Check size={17} />}</button></div><div className="bootstrap-path"><label><span>环境根目录</span><div><input value={path} onChange={event => setPath(event.target.value)} placeholder="请选择或新建目录" disabled={busy} /><button className="secondary-button" onClick={() => void browse()} disabled={busy}><FolderOpen size={16} />浏览</button></div></label></div>{error && <div className="bootstrap-error"><CircleAlert size={17} /><span>{error}</span></div>}<div className="bootstrap-footer"><span>{mode === "fresh" ? "已有文件保持不动；非空目录不会执行初始化。" : "接入后会保存根目录，下次启动自动加载。"}</span><button className="primary-button" disabled={!path.trim() || busy} onClick={() => void onInitialize(path.trim(), mode)}>{busy ? <LoaderCircle className="spin" size={17} /> : mode === "fresh" ? <Download size={17} /> : <FolderOpen size={17} />}{busy ? "正在初始化…" : mode === "fresh" ? "下载并初始化" : "使用此目录"}</button></div></section></main>;
 }
 
 function GlobalSearch({ query, setQuery, results, onSelect }: { query: string; setQuery: (value: string) => void; results: Array<{ key: string; label: string; detail: string; view: View }>; onSelect: (view: View) => void }) {

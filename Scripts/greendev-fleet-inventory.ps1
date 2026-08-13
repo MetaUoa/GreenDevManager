@@ -9,7 +9,8 @@ $results = foreach ($node in @($config.nodes)) {
                 & (Join-Path $root 'Scripts\greendev-agent.ps1') -Action inventory | ConvertFrom-Json
             }
             'winrm' {
-                $remoteRoot = if ($node.root) { [string]$node.root } else { 'D:\Frameworks' }
+                $remoteRoot = [string]$node.root
+                if (-not $remoteRoot) { throw "WinRM node '$($node.id)' must define its Frameworks root." }
                 Invoke-Command -ComputerName ([string]$node.host) -ScriptBlock {
                     param($FrameworksRoot)
                     & (Join-Path $FrameworksRoot 'Scripts\greendev-agent.ps1') -Action inventory
@@ -32,4 +33,3 @@ $results = foreach ($node in @($config.nodes)) {
     }
 }
 [ordered]@{ schemaVersion = 1; generatedAt = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds(); nodes = @($results) } | ConvertTo-Json -Depth 20
-

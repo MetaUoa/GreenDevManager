@@ -264,7 +264,9 @@ pub(super) fn restore_recovery_item(id: String) -> Result<OperationResult, Strin
             if !path.join("GreenDevManager.exe").is_file() {
                 return Err("应用回退点缺少 GreenDevManager.exe。".into());
             }
-            let pending = json!({"schemaVersion":1,"version":format!("rollback-{started}"),"preparedAt":started,"stage":display_path(&path),"currentExecutable":display_path(&root.join(r"Apps\GreenDevManager\GreenDevManager.exe")),"state":"verified-rollback"});
+            let current_executable = std::env::current_exe()
+                .map_err(|error| format!("读取当前程序路径失败：{error}"))?;
+            let pending = json!({"schemaVersion":1,"version":format!("rollback-{started}"),"preparedAt":started,"stage":display_path(&path),"currentExecutable":display_path(&current_executable),"state":"verified-rollback"});
             atomic_config_write(
                 &greendev(&root, "pending-app-update.json"),
                 &(serde_json::to_string_pretty(&pending).map_err(|e| e.to_string())? + "\n"),

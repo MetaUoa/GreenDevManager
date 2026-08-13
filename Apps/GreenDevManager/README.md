@@ -1,11 +1,11 @@
 # GreenDev Manager
 
-用于管理 `D:\Frameworks` Windows 绿色开发环境的 Tauri 桌面应用。当前稳定版 `1.0.0` 已完成 Phase 1–23。
+用于管理 Windows 绿色开发环境的 Tauri 桌面应用。当前稳定版 `1.0.1` 已完成首次启动在线初始化。
 
 ## 下载
 
-- [Windows x64 安装包](https://github.com/MetaUoa/GreenDevManager/releases/latest/download/GreenDevManager-1.0.0-win-x64-setup.exe)
-- [Windows x64 便携包](https://github.com/MetaUoa/GreenDevManager/releases/latest/download/GreenDevManager-1.0.0-win-x64-portable.zip)
+- [Windows x64 安装包](https://github.com/MetaUoa/GreenDevManager/releases/latest/download/GreenDevManager-1.0.1-win-x64-setup.exe)
+- [Windows x64 便携包](https://github.com/MetaUoa/GreenDevManager/releases/latest/download/GreenDevManager-1.0.1-win-x64-portable.zip)
 - [最新发布与校验文件](https://github.com/MetaUoa/GreenDevManager/releases/latest)
 
 ## 功能
@@ -46,6 +46,8 @@
 ```bat
 D:\Frameworks\Apps\GreenDevManager\run.bat
 ```
+
+安装版首次启动未发现环境时会显示目录向导。选择空目录可下载并校验最新 Bootstrap 包；选择已有目录会验证 `Scripts`、`Config` 与 `env-setup.bat`。根目录可位于任意盘符，保存后由 `FRAMEWORKS_HOME` 和应用本地配置共同发现。
 
 GNU 构建产物由 `GreenDevManager.exe` 与同目录 `WebView2Loader.dll` 组成。
 

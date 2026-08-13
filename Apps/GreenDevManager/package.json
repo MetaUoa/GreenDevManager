@@ -1,7 +1,7 @@
 {
   "name": "greendev-manager",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
     "test:e2e": "powershell -NoProfile -ExecutionPolicy Bypass -File ./e2e-test.ps1",
     "test:reliability": "powershell -NoProfile -ExecutionPolicy Bypass -File ./reliability-test.ps1",
     "test:gui": "powershell -NoProfile -ExecutionPolicy Bypass -File ./phase17-test.ps1",
+    "test:bootstrap": "powershell -NoProfile -ExecutionPolicy Bypass -File ./bootstrap-test.ps1",
     "release": "powershell -NoProfile -ExecutionPolicy Bypass -File ./release.ps1"
   },
   "dependencies": {

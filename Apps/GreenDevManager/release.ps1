@@ -108,6 +108,38 @@ $serialSeed = [Text.Encoding]::UTF8.GetBytes("GreenDev Manager|$version|$SourceD
 $serialBytes = [Security.Cryptography.SHA256]::Create().ComputeHash($serialSeed)[0..15]
 $sbom = [ordered]@{ bomFormat = 'CycloneDX'; specVersion = '1.5'; serialNumber = "urn:uuid:$([guid]::new([byte[]]$serialBytes))"; version = 1; metadata = [ordered]@{ timestamp = $generatedAt; tools = @([ordered]@{ vendor = 'GreenDev'; name = 'release.ps1'; version = $version }); component = [ordered]@{ type = 'application'; name = 'GreenDev Manager'; version = $version } }; components = @($allComponents); vulnerabilities = $advisories }
 $sbom | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $releaseRoot 'release-sbom.cdx.json') -Encoding UTF8
+
+$bootstrapStage = Join-Path $frameworksRoot 'Caches\GreenDevManager\bootstrap-release-stage'
+if (Test-Path -LiteralPath $bootstrapStage) { Remove-Item -LiteralPath $bootstrapStage -Recurse -Force }
+New-Item -ItemType Directory -Path $bootstrapStage | Out-Null
+foreach ($name in @('README.md', 'env-setup.bat', 'setup_dev_env.bat', 'auto-setup.bat', 'cleanup.bat', 'sync-config.bat', 'greendev.exe')) {
+    $source = Join-Path $frameworksRoot $name
+    if (Test-Path -LiteralPath $source -PathType Leaf) { Copy-Item -LiteralPath $source -Destination $bootstrapStage }
+}
+Copy-Item -LiteralPath (Join-Path $frameworksRoot 'Scripts') -Destination $bootstrapStage -Recurse
+New-Item -ItemType Directory -Path (Join-Path $bootstrapStage 'Config') | Out-Null
+foreach ($name in @('cargo', 'gradle', 'greendev', 'maven', 'mysql', 'npm', 'pip')) {
+    $source = Join-Path $frameworksRoot "Config\$name"
+    if (Test-Path -LiteralPath $source -PathType Container) { Copy-Item -LiteralPath $source -Destination (Join-Path $bootstrapStage 'Config') -Recurse }
+}
+foreach ($name in @('pins.json', 'package-lock.json', 'pending-app-update.json')) {
+    $localState = Join-Path $bootstrapStage "Config\greendev\$name"
+    if (Test-Path -LiteralPath $localState) { Remove-Item -LiteralPath $localState -Force }
+}
+$bootstrapZip = Join-Path $releaseRoot "GreenDevManager-bootstrap-$version.zip"
+if (Test-Path -LiteralPath $bootstrapZip) { Remove-Item -LiteralPath $bootstrapZip -Force }
+Compress-Archive -Path (Join-Path $bootstrapStage '*') -DestinationPath $bootstrapZip -CompressionLevel Optimal
+$bootstrapUrl = if ($ReleaseBaseUrl) { "$($ReleaseBaseUrl.TrimEnd('/'))/$([Uri]::EscapeDataString((Split-Path -Leaf $bootstrapZip)))" } else { Split-Path -Leaf $bootstrapZip }
+$bootstrapManifest = [ordered]@{
+    schemaVersion = 1
+    version = $version
+    generatedAt = $generatedAt
+    url = $bootstrapUrl
+    size = (Get-Item -LiteralPath $bootstrapZip).Length
+    sha256 = (Get-FileHash -LiteralPath $bootstrapZip -Algorithm SHA256).Hash
+}
+$bootstrapManifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $releaseRoot 'bootstrap-manifest.json') -Encoding UTF8
+
 $gitCommit = (& git -C $frameworksRoot rev-parse HEAD 2>$null)
 $materials = @(
     [ordered]@{ uri = 'git+local'; digest = [ordered]@{ sha1 = [string]$gitCommit } },
@@ -120,10 +152,16 @@ $provenance = [ordered]@{ schemaVersion = 1; predicateType = 'https://slsa.dev/p
 $provenance | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $releaseRoot 'provenance.json') -Encoding UTF8
 
 $artifacts = Get-ChildItem -LiteralPath $releaseRoot -File | Where-Object {
-    $_.Name -notin @('SHA256SUMS.txt', 'release-manifest.json', 'update-feed.json') -and -not $_.Name.EndsWith('.sig.json')
+    $_.Name -notin @('SHA256SUMS.txt', 'release-manifest.json', 'update-feed.json', 'bootstrap-manifest.json') -and
+        $_.Name -notlike 'GreenDevManager-bootstrap-*.zip' -and
+        -not $_.Name.EndsWith('.sig.json')
 }
 $checksumPath = Join-Path $releaseRoot 'SHA256SUMS.txt'
-$lines = foreach ($artifact in $artifacts) { $hash = (Get-FileHash -LiteralPath $artifact.FullName -Algorithm SHA256).Hash; "$hash  $($artifact.Name)" }
+$checksumArtifacts = @($artifacts) + @(
+    Get-Item -LiteralPath $bootstrapZip
+    Get-Item -LiteralPath (Join-Path $releaseRoot 'bootstrap-manifest.json')
+)
+$lines = foreach ($artifact in $checksumArtifacts) { $hash = (Get-FileHash -LiteralPath $artifact.FullName -Algorithm SHA256).Hash; "$hash  $($artifact.Name)" }
 Set-Content -LiteralPath $checksumPath -Value $lines -Encoding ASCII
 $releaseManifest = [ordered]@{
     schemaVersion = 1

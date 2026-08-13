@@ -9,6 +9,7 @@ $html = Get-Content (Join-Path $appRoot 'index.html') -Raw
 Write-Host '== Accessibility gates =='
 foreach ($marker in @('aria-current', 'aria-label="主要导航"', 'aria-live="polite"', 'href="#main-content"', 'event.ctrlKey', 'PageDown')) { if (-not $source.Contains($marker)) { throw "Missing accessibility marker: $marker" } }
 foreach ($marker in @(':focus-visible', '.skip-link', 'prefers-reduced-motion')) { if (-not $styles.Contains($marker)) { throw "Missing accessibility style: $marker" } }
+foreach ($marker in @('BootstrapWizard', 'select_frameworks_directory', 'initialize_frameworks_root', '全新下载配置', '接入现有环境')) { if (-not $source.Contains($marker)) { throw "Missing first-run marker: $marker" } }
 if ($html -notmatch '<html\s+lang="zh-CN"' -or $html -notmatch 'name="viewport"') { throw 'HTML language or viewport metadata is missing.' }
 Write-Host '[OK] keyboard navigation, focus, live status, language and reduced motion'
 
