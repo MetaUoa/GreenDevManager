@@ -294,6 +294,24 @@ struct StoragePoint {
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct CatalogCandidate {
+    id: String,
+    provider: String,
+    version: String,
+    architecture: String,
+    channel: String,
+    url: String,
+    sha256: String,
+    archive_root: String,
+    install_dir: String,
+    archive_path: String,
+    component_name: String,
+    notes: String,
+    checksum_ready: bool,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct UpdateCandidate {
     component_id: String,
     name: String,
@@ -309,6 +327,7 @@ struct UpdateCandidate {
     can_adopt: bool,
     policy: String,
     release_notes: String,
+    candidates: Vec<CatalogCandidate>,
 }
 
 #[derive(Clone, Serialize)]
@@ -631,7 +650,8 @@ fn bootstrap_config_path() -> PathBuf {
 }
 
 fn saved_frameworks_root() -> Option<PathBuf> {
-    let value: Value = serde_json::from_str(&fs::read_to_string(bootstrap_config_path()).ok()?).ok()?;
+    let value: Value =
+        serde_json::from_str(&fs::read_to_string(bootstrap_config_path()).ok()?).ok()?;
     let path = PathBuf::from(value.get("root")?.as_str()?);
     is_frameworks_root(&path).then_some(path)
 }
@@ -680,11 +700,11 @@ fn persist_frameworks_root(path: &Path) -> Result<(), String> {
     fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     let temporary = parent.join(format!("root-{}.tmp", now_millis()));
     let content = serde_json::to_vec_pretty(&json!({
-            "schemaVersion": 1,
-            "root": display_path(&canonical),
-            "savedAt": now_millis()
-        }))
-        .map_err(|error| error.to_string())?;
+        "schemaVersion": 1,
+        "root": display_path(&canonical),
+        "savedAt": now_millis()
+    }))
+    .map_err(|error| error.to_string())?;
     if config_path.is_file() {
         atomic_config_write(
             &config_path,
@@ -836,7 +856,9 @@ fn initialize_frameworks_root(
     match mode.as_str() {
         "existing" => {
             if !is_frameworks_root(&selected) {
-                return Err("所选目录不是现有 GreenDev 环境：缺少 Scripts 和 env-setup.bat。".into());
+                return Err(
+                    "所选目录不是现有 GreenDev 环境：缺少 Scripts 和 env-setup.bat。".into(),
+                );
             }
         }
         "fresh" => {
@@ -3703,6 +3725,70 @@ fn get_install_plan(component_id: String, action: String) -> Result<InstallPlan,
     })
 }
 
+fn catalog_text(value: &Value, key: &str) -> String {
+    value
+        .get(key)
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string()
+}
+
+fn catalog_candidates(value: Option<&Value>) -> Vec<CatalogCandidate> {
+    let Some(value) = value else {
+        return Vec::new();
+    };
+    let mut candidates: Vec<CatalogCandidate> = value
+        .get("candidates")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|candidate| {
+            let version = catalog_text(candidate, "version");
+            if version.is_empty() {
+                return None;
+            }
+            let sha256 = catalog_text(candidate, "sha256");
+            Some(CatalogCandidate {
+                id: catalog_text(candidate, "id"),
+                provider: catalog_text(candidate, "provider"),
+                version,
+                architecture: catalog_text(candidate, "architecture"),
+                channel: catalog_text(candidate, "channel"),
+                url: catalog_text(candidate, "url"),
+                sha256: sha256.clone(),
+                archive_root: catalog_text(candidate, "archiveRoot"),
+                install_dir: catalog_text(candidate, "installDir"),
+                archive_path: catalog_text(candidate, "archivePath"),
+                component_name: catalog_text(candidate, "componentName"),
+                notes: catalog_text(candidate, "notes"),
+                checksum_ready: !sha256.is_empty(),
+            })
+        })
+        .collect();
+    if candidates.is_empty() {
+        let version = catalog_text(value, "version");
+        if !version.is_empty() {
+            let sha256 = catalog_text(value, "sha256");
+            candidates.push(CatalogCandidate {
+                id: catalog_text(value, "defaultCandidateId"),
+                provider: "官方目录".into(),
+                version,
+                architecture: "x64".into(),
+                channel: String::new(),
+                url: catalog_text(value, "url"),
+                sha256: sha256.clone(),
+                archive_root: String::new(),
+                install_dir: String::new(),
+                archive_path: String::new(),
+                component_name: String::new(),
+                notes: catalog_text(value, "notes"),
+                checksum_ready: !sha256.is_empty(),
+            });
+        }
+    }
+    candidates
+}
+
 #[tauri::command]
 fn check_component_updates() -> Result<Vec<UpdateCandidate>, String> {
     let root = frameworks_root()?;
@@ -3739,30 +3825,26 @@ fn check_component_updates() -> Result<Vec<UpdateCandidate>, String> {
         let catalog_item = catalog
             .get("components")
             .and_then(|value| value.get(&item.id));
+        let candidates = catalog_candidates(catalog_item);
         let catalog_available = catalog_item
             .and_then(|value| value.get("status"))
             .and_then(Value::as_str)
             == Some("ok")
-            && catalog_item
-                .and_then(|value| value.get("version"))
-                .and_then(Value::as_str)
-                .map(|value| !value.is_empty())
-                .unwrap_or(false);
-        let target_version = if catalog_available {
-            catalog_item
-                .and_then(|value| value.get("version"))
-                .and_then(Value::as_str)
-                .unwrap_or(&item.version)
-                .to_string()
+            && !candidates.is_empty();
+        let target_version = if let Some(candidate) = candidates.first() {
+            candidate.version.clone()
         } else {
             item.version.clone()
         };
-        let can_adopt = catalog_available && target_version != item.version;
+        let can_adopt = candidates.iter().any(|candidate| {
+            candidate.version != item.version
+                || (!candidate.url.is_empty() && candidate.url != item.source.url)
+        });
         let install_ready = !can_adopt && status.checksum_ready;
-        let release_notes = catalog_item
-            .and_then(|value| value.get("notes"))
-            .and_then(Value::as_str)
-            .map(str::to_string)
+        let release_notes = candidates
+            .first()
+            .map(|candidate| candidate.notes.clone())
+            .filter(|value| !value.is_empty())
             .unwrap_or_else(|| {
                 if status.active {
                     "当前入口已是清单目标版本。".into()
@@ -3788,6 +3870,7 @@ fn check_component_updates() -> Result<Vec<UpdateCandidate>, String> {
                 .cloned()
                 .unwrap_or_else(|| "stable".into()),
             release_notes,
+            candidates,
         });
     }
     Ok(result)
@@ -3820,7 +3903,10 @@ fn start_update_catalog_task(state: tauri::State<AppState>) -> Result<TaskSnapsh
 }
 
 #[tauri::command]
-fn adopt_update_candidate(component_id: String) -> Result<OperationResult, String> {
+fn adopt_update_candidate(
+    component_id: String,
+    candidate_id: Option<String>,
+) -> Result<OperationResult, String> {
     let started = now_millis();
     let root = frameworks_root()?;
     let path = root.join(r"Config\greendev\components.json");
@@ -3829,21 +3915,35 @@ fn adopt_update_candidate(component_id: String) -> Result<OperationResult, Strin
             .map_err(|_| "请先刷新官方版本目录。".to_string())?,
     )
     .map_err(|error| error.to_string())?;
-    let candidate = catalog
+    let catalog_item = catalog
         .get("components")
         .and_then(|value| value.get(&component_id))
         .filter(|value| value.get("status").and_then(Value::as_str) == Some("ok"))
         .ok_or_else(|| "该组件没有有效在线候选。".to_string())?;
-    let version = candidate
-        .get("version")
-        .and_then(Value::as_str)
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| "候选版本为空。".to_string())?;
-    let url = candidate.get("url").and_then(Value::as_str).unwrap_or("");
-    let sha = candidate
-        .get("sha256")
-        .and_then(Value::as_str)
-        .unwrap_or("");
+    let candidates = catalog_candidates(Some(catalog_item));
+    let candidate = candidate_id
+        .as_deref()
+        .and_then(|id| candidates.iter().find(|candidate| candidate.id == id))
+        .or_else(|| candidates.first())
+        .cloned()
+        .ok_or_else(|| "该组件没有有效在线候选。".to_string())?;
+    let version = candidate.version.as_str();
+    let url = candidate.url.as_str();
+    let sha = candidate.sha256.as_str();
+    if !url.is_empty() && !url.starts_with("https://") {
+        return Err("在线候选必须使用 HTTPS。".into());
+    }
+    if !sha.is_empty() && (sha.len() != 64 || !sha.chars().all(|value| value.is_ascii_hexdigit())) {
+        return Err("在线候选 SHA256 格式无效。".into());
+    }
+    for (label, value) in [
+        ("installDir", candidate.install_dir.as_str()),
+        ("archivePath", candidate.archive_path.as_str()),
+    ] {
+        if !value.is_empty() {
+            resolve_relative(&root, value).map_err(|error| format!("{label}: {error}"))?;
+        }
+    }
     let mut manifest: Value =
         serde_json::from_str(&fs::read_to_string(&path).map_err(|error| error.to_string())?)
             .map_err(|error| error.to_string())?;
@@ -3871,12 +3971,19 @@ fn adopt_update_candidate(component_id: String) -> Result<OperationResult, Strin
         }
     };
     item["version"] = json!(version);
-    if let Some(value) = item.get("installDir").and_then(Value::as_str) {
+    if !candidate.component_name.is_empty() {
+        item["name"] = json!(candidate.component_name);
+    }
+    if !candidate.install_dir.is_empty() {
+        item["installDir"] = json!(candidate.install_dir);
+    } else if let Some(value) = item.get("installDir").and_then(Value::as_str) {
         item["installDir"] = json!(replace_version(value));
     }
     if !url.is_empty() {
         item["source"]["url"] = json!(url);
-        if let Some(file_name) = url.rsplit('/').next().filter(|value| !value.is_empty()) {
+        if !candidate.archive_path.is_empty() {
+            item["source"]["archive"] = json!(candidate.archive_path);
+        } else if let Some(file_name) = url.rsplit('/').next().filter(|value| !value.is_empty()) {
             item["source"]["archive"] = json!(format!(r"downloads\packages\{file_name}"));
         }
     } else if component_id == "rust" {
@@ -3884,23 +3991,32 @@ fn adopt_update_candidate(component_id: String) -> Result<OperationResult, Strin
             json!(format!(r"downloads\packages\rust-{version}-standalone.zip"));
     }
     item["source"]["sha256"] = json!(sha);
-    let archive_root = match component_id.as_str() {
-        "node" => format!("node-v{version}-win-x64"),
-        "gradle" => format!("gradle-{version}"),
-        "maven" => format!("apache-maven-{version}"),
-        "mysql" => format!("mysql-{version}-winx64"),
-        "python" => String::new(),
-        "java" => url
-            .rsplit('/')
-            .next()
-            .unwrap_or("")
-            .trim_end_matches(".zip")
-            .to_string(),
-        _ => item
-            .get("archiveRoot")
-            .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_string(),
+    if !candidate.provider.is_empty() {
+        item["source"]["provider"] = json!(candidate.provider);
+    }
+    item["source"]["architecture"] = json!(candidate.architecture);
+    item["source"]["channel"] = json!(candidate.channel);
+    let archive_root = if !candidate.archive_root.is_empty() {
+        candidate.archive_root.clone()
+    } else {
+        match component_id.as_str() {
+            "node" => format!("node-v{version}-win-x64"),
+            "gradle" => format!("gradle-{version}"),
+            "maven" => format!("apache-maven-{version}"),
+            "mysql" => format!("mysql-{version}-winx64"),
+            "python" => String::new(),
+            "java" => url
+                .rsplit('/')
+                .next()
+                .unwrap_or("")
+                .trim_end_matches(".zip")
+                .to_string(),
+            _ => item
+                .get("archiveRoot")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string(),
+        }
     };
     item["archiveRoot"] = json!(archive_root);
     let backup = root.join(r"Config\config-backups\manifest");
@@ -3922,7 +4038,10 @@ fn adopt_update_candidate(component_id: String) -> Result<OperationResult, Strin
         true,
         Some(0),
         format!(
-            "{component_id}: {old_version} -> {version}\nSHA256: {}\n下一步请生成安装计划。",
+            "{component_id}: {old_version} -> {version}\n来源: {} · {} · {}\nSHA256: {}\n下一步请生成安装计划。",
+            candidate.provider,
+            candidate.channel,
+            candidate.architecture,
             if sha.is_empty() {
                 "等待离线导入锁定"
             } else {
@@ -4452,9 +4571,10 @@ fn get_diagnostics() -> Result<DiagnosticReport, String> {
         r"Config\greendev\components.json",
         true,
     );
-    let loader = env::current_exe()
-        .ok()
-        .and_then(|path| path.parent().map(|parent| parent.join("WebView2Loader.dll")));
+    let loader = env::current_exe().ok().and_then(|path| {
+        path.parent()
+            .map(|parent| parent.join("WebView2Loader.dll"))
+    });
     items.push(DiagnosticItem {
         id: "webview-loader".into(),
         name: "WebView2 Loader".into(),
@@ -5381,6 +5501,35 @@ mod tests {
         assert!(resolve_relative(root, r"C:\outside.zip").is_err());
     }
     #[test]
+    fn multi_source_catalog_candidates_preserve_provider_metadata() {
+        let value = json!({
+            "status": "ok",
+            "candidates": [
+                {
+                    "id": "java-temurin-17-x64",
+                    "provider": "Eclipse Temurin",
+                    "version": "17.0.20+8",
+                    "architecture": "x64",
+                    "channel": "LTS",
+                    "url": "https://example.invalid/temurin.zip",
+                    "sha256": "418497BE5CF585BDD2203D6486A565D66D3F5E992D5630D45104CB873FAB8122",
+                    "archiveRoot": "jdk-17.0.20+8",
+                    "installDir": "Runtimes\\Java\\jdk-17\\temurin-jdk-17.0.20+8",
+                    "archivePath": "downloads\\packages\\temurin.zip",
+                    "componentName": "Eclipse Temurin JDK",
+                    "notes": "Temurin 17 LTS"
+                }
+            ]
+        });
+        let candidates = catalog_candidates(Some(&value));
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].id, "java-temurin-17-x64");
+        assert_eq!(candidates[0].provider, "Eclipse Temurin");
+        assert_eq!(candidates[0].architecture, "x64");
+        assert!(candidates[0].checksum_ready);
+        assert!(candidates[0].install_dir.contains(r"jdk-17"));
+    }
+    #[test]
     fn task_transaction_records_resumable_metadata() {
         let snapshot = TaskSnapshot {
             id: "task-1".into(),
@@ -5437,7 +5586,9 @@ mod tests {
         fs::write(source.join(r"Config\greendev\components.json"), "{}").unwrap();
         copy_bootstrap_tree(&source, &destination).unwrap();
         assert!(destination.join("env-setup.bat").is_file());
-        assert!(destination.join(r"Config\greendev\components.json").is_file());
+        assert!(destination
+            .join(r"Config\greendev\components.json")
+            .is_file());
         let _ = fs::remove_dir_all(base);
     }
 }

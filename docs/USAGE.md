@@ -54,6 +54,8 @@ Phase 8–11 增加配置外部修改冲突检测、最近 30 份备份的检索
 
 Android SDK 页面使用根目录内的 `sdkmanager.bat` 刷新包目录并执行安装或确认卸载。安装与更新页面读取 `Config\greendev\components.json`，先检查依赖、版本固定和 SHA-256，再通过离线 ZIP/7Z/TAR/MSI 或镜像/代理下载归档到 `downloads\packages`，在暂存目录验证健康文件后原子落位；失败时恢复原 `current`，旧版本继续保留。长任务支持阶段、吞吐、ETA、暂停、继续、取消与失败重试。
 
+联网刷新后，安装与更新页面会列出同一组件的多个绿色候选。JDK 支持 8、11、17、21、25，并可在 Azul Zulu、Eclipse Temurin、Amazon Corretto 之间选择 Windows x64 ZIP；Node.js 提供多个 LTS 主版本，Gradle 提供多个稳定主版本。每个候选独立记录来源、版本、架构、安装目录和 SHA-256，采用候选不会移除已安装版本。
+
 “诊断与发布”页面集中显示根目录、脚本、写权限、WebView2、清单和日志状态。集成验证与发布命令：
 
 ```powershell

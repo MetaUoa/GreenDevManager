@@ -482,8 +482,8 @@ pub(super) fn prepare_app_update(version: String) -> Result<OperationResult, Str
             return Err("暂存程序的 Authenticode 签名校验未通过。".into());
         }
     }
-    let current_executable = std::env::current_exe()
-        .map_err(|error| format!("读取当前程序路径失败：{error}"))?;
+    let current_executable =
+        std::env::current_exe().map_err(|error| format!("读取当前程序路径失败：{error}"))?;
     let pending = json!({"schemaVersion":1,"version":version,"preparedAt":now_millis(),"package":display_path(&portable.path()),"stage":display_path(&stage),"currentExecutable":display_path(&current_executable),"state":"verified"});
     write_json_backup(
         &root,

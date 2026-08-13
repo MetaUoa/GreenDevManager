@@ -175,6 +175,15 @@ if (-not (Test-Path -LiteralPath $healthPath -PathType Leaf)) {
         Write-Host 'Extracting to staging directory'
         Expand-PackageArchive $archivePath $stage ([string]$component.source.type)
         $payload = if ($component.archiveRoot) { Join-Path $stage ([string]$component.archiveRoot) } else { $stage }
+        if (-not (Test-Path -LiteralPath (Join-Path $payload ([string]$component.healthPath)) -PathType Leaf)) {
+            $detected = @(Get-ChildItem -LiteralPath $stage -Directory -Force | Where-Object {
+                Test-Path -LiteralPath (Join-Path $_.FullName ([string]$component.healthPath)) -PathType Leaf
+            })
+            if ($detected.Count -eq 1) {
+                $payload = $detected[0].FullName
+                Write-Host "Detected archive root: $($detected[0].Name)"
+            }
+        }
         if (-not (Test-Path -LiteralPath (Join-Path $payload ([string]$component.healthPath)) -PathType Leaf)) { throw "Health file missing after extraction: $($component.healthPath)" }
         if (Test-Path -LiteralPath $installDir) { throw "Install directory exists but is unhealthy: $installDir" }
         Move-Item -LiteralPath $payload -Destination $installDir

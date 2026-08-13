@@ -162,6 +162,22 @@ export type DiagnosticReport = { appVersion: string; generatedAt: number; health
 
 export type StoragePoint = { recordedAt: number; totalSizeBytes: number; cacheSizeBytes: number };
 
+export type CatalogCandidate = {
+  id: string;
+  provider: string;
+  version: string;
+  architecture: string;
+  channel: string;
+  url: string;
+  sha256: string;
+  archiveRoot: string;
+  installDir: string;
+  archivePath: string;
+  componentName: string;
+  notes: string;
+  checksumReady: boolean;
+};
+
 export type UpdateCandidate = {
   componentId: string;
   name: string;
@@ -177,6 +193,7 @@ export type UpdateCandidate = {
   canAdopt: boolean;
   policy: string;
   releaseNotes: string;
+  candidates: CatalogCandidate[];
 };
 
 export type BatchInstallPlan = { componentIds: string[]; orderedIds: string[]; steps: string[]; blockers: string[]; ready: boolean };

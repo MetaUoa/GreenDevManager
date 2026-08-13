@@ -13,6 +13,9 @@
       "archiveRoot": "zulu21.50.19-ca-jdk21.0.11-win_x64",
       "source": {
         "type": "archive",
+        "provider": "Azul Zulu",
+        "architecture": "x64",
+        "channel": "LTS",
         "url": "",
         "archive": "downloads\\packages\\zulu21.0.11-win_x64.zip",
         "sha256": ""

@@ -26,6 +26,9 @@
             "required": ["type", "archive", "sha256"],
             "properties": {
               "type": { "enum": ["archive", "msi"] },
+              "provider": { "type": "string" },
+              "architecture": { "type": "string" },
+              "channel": { "type": "string" },
               "url": { "type": "string" },
               "archive": { "type": "string", "pattern": "\\.(zip|7z|tar\\.gz|tgz|tar\\.xz|msi)$" },
               "sha256": { "type": "string", "pattern": "^$|^[A-Fa-f0-9]{64}$" }

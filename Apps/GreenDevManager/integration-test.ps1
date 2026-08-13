@@ -41,6 +41,17 @@ if ($buildScript -notmatch "--features(?:\s+custom-protocol|',\s*'custom-protoco
 if ($cargoManifest -notmatch 'default-run\s*=\s*"greendev-manager"') { throw 'GUI is not the default bundle target.' }
 Write-Host '[OK] release builds load embedded frontend assets'
 
+Write-Host '== Multi-source green catalog wiring =='
+$catalogScript = Get-Content (Join-Path $frameworksRoot 'Scripts\refresh-update-catalog.ps1') -Raw
+$frontendSource = Get-Content (Join-Path $appRoot 'src\App.tsx') -Raw
+foreach ($marker in @('Azul Zulu', 'Eclipse Temurin', 'Amazon Corretto', 'java-zulu-', 'java-temurin-', 'java-corretto-', 'latest_sha256')) {
+    if (-not $catalogScript.Contains($marker)) { throw "Green catalog source is missing: $marker" }
+}
+foreach ($marker in @('source-picker', 'selectedCandidates', '绿色发行版 / 版本', 'candidateId')) {
+    if (-not $frontendSource.Contains($marker)) { throw "Catalog selection UI is missing: $marker" }
+}
+Write-Host '[OK] JDK vendors and multi-version picker are wired'
+
 Write-Host '== Manifest plans =='
 $manifest = Get-Content (Join-Path $frameworksRoot 'Config\greendev\components.json') -Raw | ConvertFrom-Json
 if ($manifest.schemaVersion -notin @(1, 2)) { throw 'Manifest schema mismatch.' }

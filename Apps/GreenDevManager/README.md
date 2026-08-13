@@ -1,11 +1,11 @@
 # GreenDev Manager
 
-用于管理 Windows 绿色开发环境的 Tauri 桌面应用。当前稳定版 `1.0.1` 已完成首次启动在线初始化。
+用于管理 Windows 绿色开发环境的 Tauri 桌面应用。当前稳定版 `1.1.0` 支持首次启动在线初始化与多来源绿色版本选择。
 
 ## 下载
 
-- [Windows x64 安装包](https://github.com/MetaUoa/GreenDevManager/releases/latest/download/GreenDevManager-1.0.1-win-x64-setup.exe)
-- [Windows x64 便携包](https://github.com/MetaUoa/GreenDevManager/releases/latest/download/GreenDevManager-1.0.1-win-x64-portable.zip)
+- [Windows x64 安装包](https://github.com/MetaUoa/GreenDevManager/releases/latest/download/GreenDevManager-1.1.0-win-x64-setup.exe)
+- [Windows x64 便携包](https://github.com/MetaUoa/GreenDevManager/releases/latest/download/GreenDevManager-1.1.0-win-x64-portable.zip)
 - [最新发布与校验文件](https://github.com/MetaUoa/GreenDevManager/releases/latest)
 
 ## 功能
@@ -24,7 +24,8 @@
 - 组件依赖和固定状态预检、离线 ZIP/7Z/TAR/MSI 导入、镜像/代理、断点重试、强制 SHA-256 校验及失败回滚
 - 运行环境诊断、崩溃日志、集成测试、便携 ZIP 与 NSIS 安装包发布
 - 配置冲突检测、最近 30 份备份保留/检索/预览、任务事务恢复和 current 自动修复
-- LTS/Stable 官方目录刷新、候选采用、依赖排序批量更新和一键版本回退
+- 多来源绿色目录：JDK 8/11/17/21/25 可选 Azul Zulu、Eclipse Temurin、Amazon Corretto；Node 多 LTS 与 Gradle 多稳定主版本
+- 发行版/版本/架构候选选择、SHA-256 锁定、依赖排序批量更新和一键版本回退
 - 全局搜索、深色模式、页面记忆、任务中心、磁盘趋势和脱敏诊断包
 - 跨盘符 Profile 导入导出、Manifest Schema 迁移、发布清单、可选代码签名和 CI 门禁
 - 后台任务暂停/继续/重试、阶段事务、下载吞吐和异常恢复回归
