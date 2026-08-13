@@ -4,12 +4,12 @@
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
   <!--
     Frameworks 绿色环境 Maven 配置（国内镜像）
-    权威副本: D:\Frameworks\Config\maven\settings.xml
+    权威副本: %FRAMEWORKS_HOME%\Config\maven\settings.xml
     生效位置: %MAVEN_HOME%\conf\settings.xml
-    本地仓库: D:\Frameworks\Caches\Maven\repository
+    本地仓库: %FRAMEWORKS_HOME%\Caches\Maven\repository
   -->
 
-  <localRepository>D:/Frameworks/Caches/Maven/repository</localRepository>
+  <localRepository>${env.FRAMEWORKS_HOME}/Caches/Maven/repository</localRepository>
   <interactiveMode>false</interactiveMode>
   <offline>false</offline>
 

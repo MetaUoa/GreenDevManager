@@ -1,0 +1,44 @@
+name: GreenDev Manager
+
+on:
+  push:
+    paths:
+      - "Apps/GreenDevManager/**"
+      - "Scripts/*.ps1"
+      - "Config/greendev/**"
+      - ".github/workflows/greendev-manager.yml"
+  pull_request:
+    paths:
+      - "Apps/GreenDevManager/**"
+      - "Scripts/*.ps1"
+      - "Config/greendev/**"
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Apps/GreenDevManager
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: Apps/GreenDevManager/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm run build
+      - run: cargo test --release --features custom-protocol --manifest-path src-tauri/Cargo.toml
+      - run: cargo build --release --features custom-protocol --bin greendev --manifest-path src-tauri/Cargo.toml
+      - shell: pwsh
+        run: ./phase17-test.ps1 -SkipWindow
+      - name: PowerShell syntax
+        shell: pwsh
+        run: |
+          $scripts = @(Get-ChildItem ../../Scripts -Filter *.ps1) + @(Get-ChildItem . -Filter *.ps1)
+          foreach ($script in $scripts) {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count) { throw "$($script.Name): $($errors[0].Message)" }
+          }

@@ -1,0 +1,5 @@
+{
+  "maxConcurrent": 2,
+  "defaultPriority": 50,
+  "notifications": true
+}

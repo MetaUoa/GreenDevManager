@@ -10,3 +10,12 @@
 
 # 环境变量备份（含本机路径快照，无需跟踪）
 /Config/env-backups/
+
+# GreenDev Manager 本机状态与操作记录
+/Config/greendev/pins.json
+/Logs/GreenDev/
+/Config/config-backups/
+/Config/greendev/package-lock.json
+/Releases/
+/Exports/
+/greendev.exe

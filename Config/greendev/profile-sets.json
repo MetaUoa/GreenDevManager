@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "activeProfile": "default",
+  "profiles": [
+    {
+      "id": "default",
+      "name": "默认开发环境",
+      "components": ["java", "node", "python", "gradle", "maven", "rust", "mysql"],
+      "teamTemplate": false,
+      "machineOverrides": {}
+    },
+    {
+      "id": "java-backend",
+      "name": "Java 后端",
+      "components": ["java", "gradle", "maven", "mysql"],
+      "teamTemplate": true,
+      "machineOverrides": {}
+    },
+    {
+      "id": "rust-dev",
+      "name": "Rust 开发",
+      "components": ["rust", "c"],
+      "teamTemplate": true,
+      "machineOverrides": {}
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "example-plugin",
+  "name": "Example GreenDev Plugin",
+  "version": "1.0.0",
+  "entry": "plugin.ps1",
+  "permissions": {
+    "network": false,
+    "process": false,
+    "writeRoots": [
+      "Caches\\GreenDevManager\\plugins\\example-plugin"
+    ]
+  }
+}

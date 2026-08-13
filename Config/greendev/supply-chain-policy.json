@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "requireCodeSigning": false,
+  "requireDetachedSignatures": false,
+  "requireTrustedChain": false,
+  "allowUnsignedLocal": true,
+  "trustedSignerThumbprints": [],
+  "revokedSignerThumbprints": [],
+  "keyRotationDays": 365,
+  "allowedLicenses": [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC"
+  ],
+  "deniedLicenses": []
+}

@@ -72,11 +72,11 @@
 ## Python
 
 官网: https://www.python.org/downloads/windows/  
-推荐: Windows embeddable package (64-bit)
+推荐: 完整 Windows x64 安装目录（含 pip），迁入根目录后再切换 `current`
 
 ```text
-解压到: D:\Frameworks\Runtimes\Python\python-3.12
-入口:   D:\Frameworks\Runtimes\Python\current  -> python-3.12
+迁入到: D:\Frameworks\Runtimes\Python\python-3.13
+入口:   D:\Frameworks\Runtimes\Python\current  -> python-3.13
 缓存:   D:\Frameworks\Caches\pip
 ```
 

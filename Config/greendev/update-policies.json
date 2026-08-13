@@ -1,0 +1,9 @@
+{
+  "java": "lts",
+  "node": "lts",
+  "python": "stable",
+  "gradle": "stable",
+  "maven": "stable",
+  "rust": "stable",
+  "mysql": "lts"
+}

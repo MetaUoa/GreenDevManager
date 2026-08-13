@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "readOnly": false,
+  "lockedFields": [],
+  "requireSignedCatalogs": false,
+  "requireSignedUpdates": false,
+  "allowedFeedHosts": [],
+  "allowedProxyHosts": [],
+  "machineGroup": "default",
+  "teamRepository": {
+    "kind": "directory",
+    "path": "",
+    "url": "",
+    "branch": "main"
+  }
+}

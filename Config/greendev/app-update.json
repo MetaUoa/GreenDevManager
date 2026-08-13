@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "channel": "stable",
+  "feedUrl": "https://github.com/MetaUoa/GreenDevManager/releases/latest/download/update-feed.json",
+  "requireSignature": false,
+  "autoDownload": false
+}

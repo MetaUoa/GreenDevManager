@@ -1,66 +1,29 @@
-# CLI 命令设计
+# GreenDev CLI
 
-## 基础命令
+`greendev.exe` 是 GUI 的命令行入口，读取相同的 `components.json`、`profile-sets.json` 和 Profile Lock，并调用相同的安装脚本。操作事务写入 `Caches\GreenDevManager\transactions`，结果写入 `Logs\GreenDev\operations.jsonl`。
 
 ```bat
-greendev list
-greendev search <keyword>
-greendev install <tool> [version]
-greendev uninstall <tool> [version]
-greendev update [tool]
-greendev use <tool> <version>
-greendev versions <tool>
-greendev doctor [tool]
+greendev.exe list [-Json]
+greendev.exe doctor
+greendev.exe plan COMPONENT
+greendev.exe install COMPONENT
+greendev.exe update COMPONENT
+greendev.exe use COMPONENT TARGET_PATH
+greendev.exe profile PROFILE_ID
+greendev.exe lock PROFILE_ID
+greendev.exe diff PROFILE_ID
+greendev.exe validate
+greendev.exe audit
 ```
 
-## Profile 命令
+`install` 与 `update` 强制执行依赖、SHA256、暂存安装和健康检查。`use` 仅切换经过健康验证的目录联接，原版本目录继续保留。`profile` 按档案切换已安装组件；缺失组件保持原状并由后续安装计划处理。
+
+示例：
 
 ```bat
-greendev profile list
-greendev profile show rust-dev
-greendev profile install rust-dev
-```
-
-也可以简写：
-
-```bat
-greendev profile rust-dev
-```
-
-## 环境命令
-
-```bat
-greendev env generate
-greendev env print
-greendev env check
-greendev env shell
-```
-
-## 缓存命令
-
-```bat
-greendev cache list
-greendev cache clean
-greendev cache clean gradle
-greendev cache clean cargo
-```
-
-## 配置命令
-
-```bat
-greendev config get root
-greendev config set root D:\Frameworks
-greendev config get proxy
-greendev config set proxy http://127.0.0.1:7890
-```
-
-## 示例
-
-```bat
-greendev install java jdk-21
-greendev install gradle 8.5
-greendev install rust stable
-greendev use java jdk-21
-greendev profile android-dev
-greendev doctor
+greendev.exe list -Json
+greendev.exe plan gradle
+greendev.exe use gradle BuildTools\Gradle\gradle-9.4.1
+greendev.exe lock java-backend
+greendev.exe diff java-backend
 ```

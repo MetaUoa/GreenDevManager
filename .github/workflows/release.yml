@@ -1,0 +1,53 @@
+name: Release GreenDev Manager
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag, for example v1.0.1
+        required: true
+      channel:
+        description: Update channel
+        required: true
+        default: stable
+        type: choice
+        options:
+          - stable
+          - beta
+          - nightly
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: Apps/GreenDevManager/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        working-directory: Apps/GreenDevManager
+        run: npm ci
+      - name: Verify tag and build release
+        shell: pwsh
+        run: |
+          $version = (Get-Content Apps/GreenDevManager/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ("v$version" -ne "${{ inputs.tag }}") { throw "Tag/version mismatch: ${{ inputs.tag }} vs $version" }
+          $base = "https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}"
+          ./Apps/GreenDevManager/release.ps1 -Channel '${{ inputs.channel }}' -ReleaseBaseUrl $base -OnlineCargo
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content Apps/GreenDevManager/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $directory = Resolve-Path "Releases/GreenDevManager/$version"
+          $assets = @(Get-ChildItem $directory -File | ForEach-Object FullName)
+          gh release create '${{ inputs.tag }}' $assets --verify-tag --title "GreenDev Manager $version" --notes-file (Join-Path $directory 'RELEASE_NOTES.md')

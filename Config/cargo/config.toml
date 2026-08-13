@@ -1,10 +1,8 @@
 # Frameworks 绿色环境 Cargo 配置（国内镜像）
-# 权威副本: D:\Frameworks\Config\cargo\config.toml
+# 权威副本: %FRAMEWORKS_HOME%\Config\cargo\config.toml
 # 生效位置: %CARGO_HOME%\config.toml
-# 即: D:\Frameworks\Toolchains\Rust\cargo-home\config.toml
-
-[build]
-target-dir = "D:/Frameworks/Caches/Rust/target"
+# 即: %FRAMEWORKS_HOME%\Toolchains\Rust\cargo-home\config.toml
+# 构建输出目录由 CARGO_TARGET_DIR 设置，避免在配置中固化盘符。
 
 [net]
 git-fetch-with-cli = true

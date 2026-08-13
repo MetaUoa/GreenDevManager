@@ -72,7 +72,7 @@ function Clear-DirectoryContents([string]$Path) {
     Assert-SafeDeletePath -Path $Path
     Get-ChildItem -LiteralPath $Path -Force -ErrorAction SilentlyContinue | ForEach-Object {
         if ($_.Name -in @('gradle.properties', 'init.d')) { return }
-        Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction Stop
     }
 }
 

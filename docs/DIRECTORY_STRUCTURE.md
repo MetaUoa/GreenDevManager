@@ -1,6 +1,6 @@
 # D:\Frameworks 目录文件结构说明
 
-更新时间: 2026-07-13
+更新时间: 2026-08-12
 
 ## 总体定位
 
@@ -17,21 +17,43 @@
 
 ```text
 D:\Frameworks
+├─ Apps              # GreenDev Manager 等本地管理应用
 ├─ BuildTools        # Gradle、Maven
 ├─ Caches            # 各工具缓存
-├─ Config            # 权威配置（Maven/Gradle 镜像等）
+├─ Config            # 权威配置、GUI 组件清单、版本固定与环境备份
 ├─ Databases         # MySQL 等
 ├─ docs              # 使用说明与设计文档
 ├─ downloads         # 离线安装包
+├─ Logs              # GreenDev Manager 持久操作日志
+├─ Exports           # 诊断包和跨盘符 Profile（运行时生成）
 ├─ Platforms         # Android SDK
 ├─ ReverseTools      # Ghidra、ILSpy、API Monitor 等
 ├─ Runtimes          # Java、Node、Python
+├─ Releases          # GUI 便携包、安装程序与校验清单
 ├─ Scripts           # 环境脚本实现
 ├─ Toolchains        # C、Rust、ACPI
 ├─ auto-setup.bat
 ├─ cleanup.bat
 ├─ env-setup.bat
-└─ setup_dev_env.bat
+├─ setup_dev_env.bat
+└─ sync-config.bat
+```
+
+## 管理应用 `Apps`
+
+```text
+Apps
+└─ GreenDevManager
+   ├─ src                 # React/TypeScript 界面
+   ├─ src-tauri           # Rust/Tauri 本地后端
+   ├─ GreenDevManager.exe # 本地构建产物（不进 Git）
+   ├─ WebView2Loader.dll  # GNU 构建运行库（不进 Git）
+   ├─ build.ps1
+   ├─ integration-test.ps1
+   ├─ e2e-test.ps1
+   ├─ release.ps1
+   ├─ CHANGELOG.md
+   └─ run.bat
 ```
 
 ## 运行时 `Runtimes`
@@ -47,7 +69,8 @@ Runtimes
 │  ├─ current          # junction -> node-v24.x
 │  └─ node-v24.18.0-win-x64
 └─ Python
-   └─ current          # 预留，安装后创建
+   ├─ current          # junction -> python-3.13
+   └─ python-3.13      # 根目录内 Python 实体
 ```
 
 入口:
@@ -119,7 +142,8 @@ Databases
    └─ mysql
       ├─ current           # junction -> mysql-8.4.7
       ├─ mysql-8.4.7
-      ├─ resources         # data / logs / files（2026-07 起数据实体在此，不再依赖 E 盘）
+      ├─ resources         # 当前 data / logs / files
+      ├─ backups           # 经校验的历史数据压缩归档
       └─ my.ini            # basedir/datadir 均指向本目录
 ```
 
@@ -161,12 +185,21 @@ Caches
 ```text
 Config
 ├─ cargo
+├─ config-backups       # GUI 保存前的配置快照
 ├─ env-backups
+├─ greendev
+│  ├─ components.json   # 组件版本、来源、依赖、健康检查与 SHA-256
+│  ├─ install-settings.json # 代理与镜像覆盖
+│  ├─ update-policies.json  # stable / lts 更新策略
+│  ├─ package-lock.json # 本地导入包的 SHA-256（运行时生成）
+│  └─ pins.json         # 版本固定
 ├─ gradle
 │  ├─ gradle.properties
 │  └─ init.d\cn-mirrors.init.gradle
 ├─ maven
 │  └─ settings.xml     # 阿里云镜像 + 本地仓库路径
+├─ mysql
+│  └─ my.ini.template  # 根据 FRAMEWORKS_HOME 生成活动配置
 ├─ npm
 └─ pip
 ```
@@ -177,20 +210,26 @@ Config
 
 ```text
 downloads
-└─ rust                # 离线安装包
+├─ packages            # 清单下载/导入缓存
+└─ rust                # Rust 离线安装包
 ```
 
 ## 脚本 `Scripts`
 
 ```text
 Scripts
-├─ frameworks-common.ps1   # 组件清单 / 路径解析 / 会话环境（单源）
+├─ frameworks-common.ps1   # PowerShell 组件清单 / 路径解析 / 会话环境
+├─ frameworks-env.cmd      # CMD 会话环境集中入口
 ├─ auto-setup.ps1
 ├─ cleanup.ps1
 ├─ dev-shell.bat
 ├─ dev-shell.ps1
 ├─ env-setup-output.ps1
-└─ setup-dev-env.ps1
+├─ manage-component.ps1   # 组件计划、导入、安装与更新
+├─ manage-component-batch.ps1 # 按依赖顺序批量更新
+├─ refresh-update-catalog.ps1 # 刷新官方版本目录
+├─ setup-dev-env.ps1
+└─ sync-config.ps1
 ```
 
 
@@ -201,6 +240,7 @@ auto-setup.bat     -> Scripts\auto-setup.ps1
 cleanup.bat        -> Scripts\cleanup.ps1
 env-setup.bat      -> 设置环境 + Scripts\env-setup-output.ps1
 setup_dev_env.bat  -> Scripts\setup-dev-env.ps1
+sync-config.bat    -> Scripts\sync-config.ps1
 dev-shell          -> Scripts\dev-shell.bat / .ps1
 ```
 
@@ -238,7 +278,6 @@ PIP_INDEX_URL       https://pypi.tuna.tsinghua.edu.cn/simple
 ```text
 Runtimes\Java\current\bin
 Runtimes\Node\current
-Runtimes\Node\current\node_modules\npm\bin
 BuildTools\Gradle\current\bin
 BuildTools\Maven\current\bin
 Platforms\Android\Sdk\platform-tools

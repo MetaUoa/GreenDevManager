@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "requireCatalogSignature": false,
+  "allowLocalManifests": true,
+  "catalogs": [],
+  "pluginPermissions": {
+    "network": false,
+    "process": false,
+    "writeRoots": [
+      "downloads\\packages",
+      "Caches\\GreenDevManager"
+    ]
+  }
+}

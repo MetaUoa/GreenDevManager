@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "logRotateBytes": 5242880,
+  "preserveLogArchives": true,
+  "resumeInterruptedTasks": true,
+  "orphanStageAction": "report",
+  "performanceBudgetMs": {
+    "dashboard": 500,
+    "manifest": 150,
+    "logs": 250
+  },
+  "releaseChannels": [
+    "stable",
+    "beta",
+    "nightly"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "agentProtocol": 1,
+  "defaultBatchPercent": 20,
+  "maintenanceWindow": {
+    "start": "02:00",
+    "end": "05:00"
+  },
+  "nodes": [],
+  "rollouts": []
+}

@@ -1,5 +1,5 @@
 // Frameworks 绿色环境 Gradle 国内镜像
-// 权威副本: D:\Frameworks\Config\gradle\init.d\cn-mirrors.init.gradle
+// 权威副本: %FRAMEWORKS_HOME%\Config\gradle\init.d\cn-mirrors.init.gradle
 // 生效位置: %GRADLE_USER_HOME%\init.d\cn-mirrors.init.gradle
 //
 // 为 pluginManagement / buildscript / project repositories 注入阿里云镜像，

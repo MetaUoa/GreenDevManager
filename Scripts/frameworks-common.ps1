@@ -25,6 +25,15 @@ function Resolve-FrameworksRoot {
     return [System.IO.Path]::GetFullPath((Join-Path $here '..'))
 }
 
+function Resolve-SystemTool {
+    param([Parameter(Mandatory = $true)][string]$Name)
+    $windows = if ($env:WINDIR) { $env:WINDIR } else { 'C:\Windows' }
+    $candidate = Join-Path $windows "System32\$Name"
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    $command = Get-Command $Name -CommandType Application -ErrorAction Stop | Select-Object -First 1
+    return $command.Source
+}
+
 function Get-FrameworksComponents {
     param(
         [Parameter(Mandatory = $true)]
@@ -49,11 +58,9 @@ function Get-FrameworksComponents {
             Vars = @{
                 NODE_HOME = "$Root\Runtimes\Node\current"
                 npm_config_cache = "$Root\Caches\npm"
+                npm_config_registry = 'https://registry.npmmirror.com'
             }
-            Paths = @(
-                "$Root\Runtimes\Node\current",
-                "$Root\Runtimes\Node\current\node_modules\npm\bin"
-            )
+            Paths = @("$Root\Runtimes\Node\current")
             Detect = "$Root\Runtimes\Node\current\node.exe"
             Download = 'https://nodejs.org/en/download/'
             ExtractTo = "$Root\Runtimes\Node"

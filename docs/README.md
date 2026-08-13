@@ -11,7 +11,7 @@
 | [`DOWNLOAD_GUIDE.md`](DOWNLOAD_GUIDE.md) | 绿色版工具下载与解压路径 |
 | [`RUST_ENV.md`](RUST_ENV.md) | Rust 绿色环境布局与环境变量 |
 
-## GreenDev Manager 设计（规划中）
+## GreenDev Manager 设计与实现
 
 | 文件 | 说明 |
 |---|---|
@@ -27,6 +27,7 @@
 D:\Frameworks\Scripts\dev-shell.bat   临时加载环境
 D:\Frameworks\env-setup.bat           检测环境
 D:\Frameworks\setup_dev_env.bat       写入用户环境变量
+D:\Frameworks\sync-config.bat         同步权威配置
 D:\Frameworks\cleanup.bat             缓存清理（默认预览）
 D:\Frameworks\auto-setup.bat          安装检测助手
 ```

@@ -1,0 +1,12 @@
+{
+  "proxyUrl": "",
+  "mirrors": {
+    "node": [],
+    "gradle": [],
+    "maven": [],
+    "java": [],
+    "python": [],
+    "rust": [],
+    "mysql": []
+  }
+}

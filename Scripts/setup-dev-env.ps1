@@ -173,6 +173,12 @@ if ($selected.Count -eq 0) {
 $backupPath = Backup-UserEnvironment
 Say "已备份当前用户环境变量: $backupPath" "Current user environment variables backed up: $backupPath"
 
+$syncKeys = @($selected | Where-Object { $_.Key -in @('rust', 'gradle', 'maven', 'mysql') } | ForEach-Object { $_.Key })
+if ($syncKeys.Count -gt 0) {
+    & (Join-Path $PSScriptRoot 'sync-config.ps1') -Lang $Lang -Keys ($syncKeys -join ',') -Quiet
+    Say "已同步所选组件的权威配置。" "Authoritative configuration synced for selected components."
+}
+
 [Environment]::SetEnvironmentVariable("FRAMEWORKS_HOME", $root, "User")
 
 $pathsToAdd = @()
@@ -192,7 +198,36 @@ foreach ($component in $selected) {
     }
 }
 
-$existing = @([Environment]::GetEnvironmentVariable("PATH", "User") -split ";" | Where-Object { $_ })
+$existingRaw = @([Environment]::GetEnvironmentVariable("PATH", "User") -split ";" | Where-Object { $_ })
+$existing = @()
+$seenPaths = @{}
+$retiredManagedPaths = @(
+    (Join-Path $root 'Runtimes\Node\current\node_modules\npm\bin')
+)
+foreach ($entry in $existingRaw) {
+    $normalized = $entry.Trim().TrimEnd('\')
+    if (-not $normalized) { continue }
+    $isRetired = $false
+    foreach ($retired in $retiredManagedPaths) {
+        if ([string]::Equals($normalized, $retired.TrimEnd('\'), [System.StringComparison]::OrdinalIgnoreCase)) {
+            $isRetired = $true
+            break
+        }
+    }
+    if ($isRetired) {
+        Say "移除旧 Frameworks PATH: $entry" "Removing retired Frameworks PATH: $entry"
+        continue
+    }
+    $underRoot = $normalized.StartsWith($root.TrimEnd('\') + '\', [System.StringComparison]::OrdinalIgnoreCase)
+    if ($underRoot -and -not (Test-Path -LiteralPath $normalized -ErrorAction SilentlyContinue)) {
+        Say "移除失效 Frameworks PATH: $entry" "Removing stale Frameworks PATH: $entry"
+        continue
+    }
+    $key = $normalized.ToLowerInvariant()
+    if ($seenPaths.ContainsKey($key)) { continue }
+    $seenPaths[$key] = $true
+    $existing += $entry
+}
 foreach ($path in $pathsToAdd) {
     $found = $false
     foreach ($e in $existing) {

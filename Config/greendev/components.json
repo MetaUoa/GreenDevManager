@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 2,
+  "components": [
+    {
+      "id": "java",
+      "name": "Java Zulu JDK",
+      "version": "21.0.11",
+      "enabled": true,
+      "dependsOn": [],
+      "installDir": "Runtimes\\Java\\jdk-21\\zulu21.50.19-ca-jdk21.0.11-win_x64",
+      "currentLink": "Runtimes\\Java\\current",
+      "healthPath": "bin\\java.exe",
+      "archiveRoot": "zulu21.50.19-ca-jdk21.0.11-win_x64",
+      "source": {
+        "type": "archive",
+        "url": "",
+        "archive": "downloads\\packages\\zulu21.0.11-win_x64.zip",
+        "sha256": ""
+      }
+    },
+    {
+      "id": "node",
+      "name": "Node.js",
+      "version": "24.18.0",
+      "enabled": true,
+      "dependsOn": [],
+      "installDir": "Runtimes\\Node\\node-v24.18.0-win-x64",
+      "currentLink": "Runtimes\\Node\\current",
+      "healthPath": "node.exe",
+      "archiveRoot": "node-v24.18.0-win-x64",
+      "source": {
+        "type": "archive",
+        "url": "https://nodejs.org/dist/v24.18.0/node-v24.18.0-win-x64.zip",
+        "archive": "downloads\\packages\\node-v24.18.0-win-x64.zip",
+        "sha256": ""
+      }
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "version": "3.13.14",
+      "enabled": true,
+      "dependsOn": [],
+      "installDir": "Runtimes\\Python\\python-3.13",
+      "currentLink": "Runtimes\\Python\\current",
+      "healthPath": "python.exe",
+      "archiveRoot": "",
+      "source": {
+        "type": "archive",
+        "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip",
+        "archive": "downloads\\packages\\python-3.13.14-embed-amd64.zip",
+        "sha256": ""
+      }
+    },
+    {
+      "id": "gradle",
+      "name": "Gradle",
+      "version": "9.4.1",
+      "enabled": true,
+      "dependsOn": ["java"],
+      "installDir": "BuildTools\\Gradle\\gradle-9.4.1",
+      "currentLink": "BuildTools\\Gradle\\current",
+      "healthPath": "bin\\gradle.bat",
+      "archiveRoot": "gradle-9.4.1",
+      "source": {
+        "type": "archive",
+        "url": "https://services.gradle.org/distributions/gradle-9.4.1-bin.zip",
+        "archive": "downloads\\packages\\gradle-9.4.1-bin.zip",
+        "sha256": ""
+      }
+    },
+    {
+      "id": "maven",
+      "name": "Apache Maven",
+      "version": "3.9.11",
+      "enabled": true,
+      "dependsOn": ["java"],
+      "installDir": "BuildTools\\Maven\\apache-maven-3.9.11",
+      "currentLink": "BuildTools\\Maven\\current",
+      "healthPath": "bin\\mvn.cmd",
+      "archiveRoot": "apache-maven-3.9.11",
+      "source": {
+        "type": "archive",
+        "url": "https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.zip",
+        "archive": "downloads\\packages\\apache-maven-3.9.11-bin.zip",
+        "sha256": ""
+      }
+    },
+    {
+      "id": "rust",
+      "name": "Rust Standalone",
+      "version": "1.96.1",
+      "enabled": true,
+      "dependsOn": [],
+      "installDir": "Toolchains\\Rust\\standalone",
+      "currentLink": "Toolchains\\Rust\\current",
+      "healthPath": "bin\\rustc.exe",
+      "archiveRoot": "standalone",
+      "source": {
+        "type": "archive",
+        "url": "",
+        "archive": "downloads\\packages\\rust-1.96.1-standalone.zip",
+        "sha256": ""
+      }
+    },
+    {
+      "id": "mysql",
+      "name": "MySQL Community Server",
+      "version": "8.4.7",
+      "enabled": true,
+      "dependsOn": [],
+      "installDir": "Databases\\Sql\\mysql\\mysql-8.4.7",
+      "currentLink": "Databases\\Sql\\mysql\\current",
+      "healthPath": "bin\\mysql.exe",
+      "archiveRoot": "mysql-8.4.7-winx64",
+      "source": {
+        "type": "archive",
+        "url": "https://dev.mysql.com/get/Downloads/MySQL-8.4/mysql-8.4.7-winx64.zip",
+        "archive": "downloads\\packages\\mysql-8.4.7-winx64.zip",
+        "sha256": ""
+      }
+    }
+  ]
+}

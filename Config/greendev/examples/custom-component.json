@@ -1,0 +1,17 @@
+{
+  "id": "custom-tool",
+  "name": "Custom Tool",
+  "version": "1.0.0",
+  "enabled": true,
+  "dependsOn": [],
+  "installDir": "Toolchains\\Custom\\custom-tool-1.0.0",
+  "currentLink": "Toolchains\\Custom\\current",
+  "healthPath": "bin\\custom-tool.exe",
+  "archiveRoot": "custom-tool-1.0.0",
+  "source": {
+    "type": "archive",
+    "url": "https://HOST/custom-tool-1.0.0.zip",
+    "archive": "downloads\\packages\\custom-tool-1.0.0.zip",
+    "sha256": ""
+  }
+}

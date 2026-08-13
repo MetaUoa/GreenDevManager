@@ -1,77 +1,23 @@
-# Profile 配置规范
+# Profile 与 Lock
 
-Profile 用于描述一组工具的组合安装方案。
+Profile 定义位于 `Config\greendev\profile-sets.json`：
 
-## 示例：Rust 开发环境
-
-```yaml
-id: rust-dev
-name: Rust Development Environment
-description: Rust CLI / Backend / System development environment
-
-tools:
-  - id: rust
-    version: stable
-    components:
-      - rustfmt
-      - clippy
-      - rust-src
-      - rust-analyzer
-
-cargo_install:
-  - cargo-edit
-  - cargo-watch
-  - cargo-nextest
-  - cargo-audit
-  - cargo-deny
-
-scripts:
-  - generate: dev-shell.bat
-  - generate: cargo-config.toml
-
-verify:
-  - rustc --version
-  - cargo --version
+```json
+{
+  "id": "java-backend",
+  "name": "Java 后端",
+  "components": ["java", "gradle", "maven", "mysql"],
+  "teamTemplate": true,
+  "machineOverrides": {}
+}
 ```
 
-## 示例：Android 开发环境
+Lock 位于 `Config\greendev\profile-locks\PROFILE.lock.json`，记录组件版本、归档 SHA256、依赖、安装目录和 current 目标。GUI 与 `greendev.exe lock/diff/profile` 使用相同文件。
 
-```yaml
-id: android-dev
-name: Android Development Environment
+团队仓库支持：
 
-tools:
-  - id: java
-    version: jdk-21
-  - id: gradle
-    version: 8.5
-  - id: maven
-    version: 3.9.11
-  - id: android-sdk
-    version: latest
-  - id: node
-    version: 24.18.0
+- `directory`：共享目录中的 `profile-sets.json`。
+- `http`：直接下载 Profile 集合。
+- `git`：指定仓库与分支。
 
-android:
-  packages:
-    - platform-tools
-    - platforms;android-35
-    - build-tools;35.0.0
-    - cmdline-tools;latest
-
-verify:
-  - java -version
-  - gradle --version
-  - adb version
-```
-
-## 字段说明
-
-| 字段 | 说明 |
-|---|---|
-| `id` | Profile ID |
-| `name` | 显示名称 |
-| `tools` | 工具列表 |
-| `components` | 组件，例如 rustfmt/clippy |
-| `scripts` | 需要生成的脚本 |
-| `verify` | 检测命令 |
+团队同步先展示新增与变更。应用时归档本机文件，按 ID 合并团队 Profile，同时保留本机 `machineOverrides` 和仅本机 Profile。完整离线介质包含所有可用归档；增量介质仅包含相对上次导出索引发生变化的归档。凭据特征文件不会进入离线包。

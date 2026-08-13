@@ -50,12 +50,9 @@ set PATH=%RUST_HOME%\bin;%PATH%
 
 权威副本: `Config\cargo\config.toml`，生效位置: `cargo-home\config.toml`。
 
-当前内容（已配 rsproxy 国内镜像）:
+当前内容（已配 rsproxy 国内镜像；构建目录由 `CARGO_TARGET_DIR` 提供）:
 
 ```toml
-[build]
-target-dir = "D:/Frameworks/Caches/Rust/target"
-
 [net]
 git-fetch-with-cli = true
 
