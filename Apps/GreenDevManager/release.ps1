@@ -77,7 +77,15 @@ if (-not $SkipInstaller) {
 }
 
 $notesPath = Join-Path $releaseRoot 'RELEASE_NOTES.md'
-$notes = if ($ReleaseNotes) { $ReleaseNotes } else { "GreenDev Manager $version`r`n`r`n- Phase 20-23: restart-resumable queue, reliability budgets, signed supply-chain workflow, remote rollout staging, Manifest SDK and CLI completions.`r`n- Existing component versions, logs and configuration backups are preserved." }
+$notes = if ($ReleaseNotes) {
+    $ReleaseNotes
+} else {
+    $changelog = Get-Content (Join-Path $appRoot 'CHANGELOG.md') -Raw
+    $escapedVersion = [regex]::Escape($version)
+    $entry = [regex]::Match($changelog, "(?ms)^##\s+$escapedVersion\b[^\r\n]*\r?\n(.*?)(?=^##\s+|\z)")
+    if (-not $entry.Success) { throw "CHANGELOG entry for $version was not found." }
+    "GreenDev Manager $version`r`n`r`n$($entry.Groups[1].Value.Trim())"
+}
 Set-Content -LiteralPath $notesPath -Value $notes -Encoding UTF8
 
 $generatedAt = if ($SourceDateEpoch -gt 0) { [DateTimeOffset]::FromUnixTimeSeconds($SourceDateEpoch).UtcDateTime.ToString('o') } else { (Get-Date).ToUniversalTime().ToString('o') }

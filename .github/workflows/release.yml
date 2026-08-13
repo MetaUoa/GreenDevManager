@@ -50,4 +50,5 @@ jobs:
           $version = (Get-Content Apps/GreenDevManager/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
           $directory = Resolve-Path "Releases/GreenDevManager/$version"
           $assets = @(Get-ChildItem $directory -File | ForEach-Object FullName)
-          gh release create '${{ inputs.tag }}' $assets --verify-tag --title "GreenDev Manager $version" --notes-file (Join-Path $directory 'RELEASE_NOTES.md')
+          gh release create '${{ inputs.tag }}' --verify-tag --title "GreenDev Manager $version" --notes-file (Join-Path $directory 'RELEASE_NOTES.md')
+          gh release upload '${{ inputs.tag }}' $assets --clobber
